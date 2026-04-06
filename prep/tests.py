@@ -47,6 +47,51 @@ class PrepPlatformTests(TestCase):
         self.assertContains(response, "Start a Test")
         self.assertContains(response, "Select a section")
         self.assertContains(response, "Select a topic")
+        self.assertContains(response, "Open profile dashboard")
+
+    def test_profile_page_loads_empty_state(self):
+        response = self.client.get(reverse("prep:profile"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Student Profile")
+        self.assertContains(response, "No completed test history yet.")
+
+    def test_profile_page_shows_aggregated_student_data(self):
+        completed = create_test_session(
+            exam=self.exam,
+            mode="topic-wise",
+            section=self.section,
+            topic=self.topic,
+            difficulty="medium",
+            question_count=5,
+            duration_minutes=15,
+            use_prediction=True,
+        )
+        answers = {}
+        for index, session_question in enumerate(completed.session_questions.all()):
+            correct_option = session_question.question.correct_option
+            if index < 2 and correct_option:
+                answers[str(session_question.question_id)] = str(correct_option.id)
+        submit_test_session(completed, answers)
+
+        in_progress = create_test_session(
+            exam=self.exam,
+            mode="mock",
+            section=self.section,
+            topic=self.topic,
+            difficulty="medium",
+            question_count=5,
+            duration_minutes=15,
+        )
+
+        response = self.client.get(reverse("prep:profile"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Overall Performance")
+        self.assertContains(response, "Prediction-based tests: 1")
+        self.assertContains(response, self.topic.name)
+        self.assertContains(response, "Recent Completed Tests")
+        self.assertContains(response, "Resume test")
+        self.assertContains(response, str(in_progress.pk))
 
     def test_bound_form_filters_sections_and_topics_for_selected_exam(self):
         other_section = self.exam.sections.exclude(pk=self.section.pk).first()
@@ -224,6 +269,7 @@ class PrepPlatformTests(TestCase):
         self.assertContains(result, "Result Summary")
         self.assertContains(result, "Back to dashboard")
         self.assertContains(result, "Start similar test again")
+        self.assertContains(result, "View profile")
 
     def test_invalid_section_topic_combo_shows_clear_error(self):
         invalid_topic = self.exam.sections.exclude(pk=self.section.pk).first().topics.first()

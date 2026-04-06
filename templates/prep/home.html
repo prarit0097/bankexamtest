@@ -12,6 +12,7 @@
             This MVP can serve tests even before the admin uploads real papers or books.
             Verified uploads later mix with generated questions, while internal provenance remains tracked.
         </p>
+        <a class="button" href="{% url 'prep:profile' %}">Open profile dashboard</a>
     </div>
     <div class="panel">
         <h2>What this build includes</h2>
@@ -23,7 +24,7 @@
 </section>
 
 <section class="grid">
-    <div class="panel">
+    <div class="panel" id="start-test">
         <h2>Start a Test</h2>
         {% if form.non_field_errors %}
             {% for error in form.non_field_errors %}

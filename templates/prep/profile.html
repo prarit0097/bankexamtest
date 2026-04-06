@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Profile Dashboard{% endblock %}
+
+{% block content %}
+<div class="panel" style="margin-bottom: 20px;">
+    <a class="button" href="{% url 'prep:home' %}">Back to dashboard</a>
+    <a class="button" href="{% url 'prep:home' %}#start-test" style="margin-left: 10px;">Start a new test</a>
+</div>
+
+<section class="hero">
+    <div class="panel">
+        <span class="pill">Student Profile</span>
+        {% if profile.telegram_username %}
+            <span class="pill">{{ profile.telegram_username }}</span>
+        {% endif %}
+        <h1>{{ profile.profile_name }}</h1>
+        {% if profile.chat_id %}
+            <p class="muted">Telegram chat ID: {{ profile.chat_id }}</p>
+        {% endif %}
+        {% if profile.linked_at %}
+            <p class="muted">Profile linked on {{ profile.linked_at|date:"d M Y, h:i A" }}</p>
+        {% endif %}
+        {% if profile.last_report_sent_at %}
+            <p class="muted">Last Telegram report sent on {{ profile.last_report_sent_at|date:"d M Y, h:i A" }}</p>
+        {% endif %}
+        {% if not profile.has_test_data %}
+            <p>No completed test history yet. Start a test and this page will begin showing your performance trends, goals, strengths, and weak areas.</p>
+        {% endif %}
+    </div>
+    <div class="panel">
+        <h2>Overview</h2>
+        <p class="muted">This page combines your test history, performance trends, repeated weak areas, and next-step goals.</p>
+        {% if default_telegram_chat_id %}
+            <p class="muted">Backend-controlled profile is currently tied to chat ID {{ default_telegram_chat_id }}.</p>
+        {% endif %}
+    </div>
+</section>
+
+<section class="grid">
+    <div class="panel">
+        <h2>Test Numbers</h2>
+        <div class="stat">{{ profile.total_completed }}</div>
+        <p class="muted">Completed tests</p>
+        <p>Started tests: {{ profile.total_started }}</p>
+        <p>Completion rate: {{ profile.completion_rate }}%</p>
+        <p>Prediction-based tests: {{ profile.prediction_tests }}</p>
+    </div>
+    <div class="panel">
+        <h2>Overall Performance</h2>
+        <div class="stat">{{ profile.overall_accuracy }}%</div>
+        <p class="muted">Overall accuracy</p>
+        <p>Average accuracy: {{ profile.average_accuracy }}%</p>
+        <p>Best accuracy: {{ profile.best_accuracy }}%</p>
+        <p>Questions solved: {{ profile.total_questions }}</p>
+    </div>
+    <div class="panel">
+        <h2>Answer Mix</h2>
+        <p>Correct: {{ profile.total_correct }}</p>
+        <p>Incorrect: {{ profile.total_incorrect }}</p>
+        <p>Skipped: {{ profile.total_skipped }}</p>
+        <p>Current streak: {{ profile.current_streak }} day(s)</p>
+        <p>Longest streak: {{ profile.longest_streak }} day(s)</p>
+    </div>
+</section>
+
+<section class="grid">
+    <div class="panel">
+        <h2>Weak Areas</h2>
+        {% if profile.weak_areas %}
+            {% for item in profile.weak_areas %}
+                <div class="pill">{{ item.label }}: {{ item.count }}</div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">No weak areas yet. Complete a few tests to see patterns.</p>
+        {% endif %}
+    </div>
+    <div class="panel">
+        <h2>Strengths</h2>
+        {% if profile.strengths %}
+            {% for item in profile.strengths %}
+                <div class="pill">{{ item.label }}: {{ item.count }}</div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">Strength trends will appear after a few completed tests.</p>
+        {% endif %}
+    </div>
+    <div class="panel">
+        <h2>Exam Mix</h2>
+        {% if profile.exam_mix %}
+            {% for item in profile.exam_mix %}
+                <div class="pill">{{ item.label }}: {{ item.count }}</div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">No exam history recorded yet.</p>
+        {% endif %}
+        <h3 style="margin-top: 18px;">Mode Mix</h3>
+        {% if profile.mode_mix %}
+            {% for item in profile.mode_mix %}
+                <div class="pill">{{ item.label }}: {{ item.count }}</div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">No mode data available yet.</p>
+        {% endif %}
+    </div>
+</section>
+
+<section class="grid">
+    <div class="panel">
+        <h2>Opportunities</h2>
+        {% if profile.opportunities %}
+            {% for item in profile.opportunities %}
+                <div class="question">
+                    <h3>{{ item.title }}</h3>
+                    <p>{{ item.detail }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">Complete more tests and the app will surface improvement opportunities here.</p>
+        {% endif %}
+    </div>
+    <div class="panel">
+        <h2>Goals</h2>
+        {% for item in profile.goals %}
+            <div class="question">
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.detail }}</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="grid">
+    <div class="panel">
+        <h2>Recent Completed Tests</h2>
+        {% if profile.recent_sessions %}
+            {% for test in profile.recent_sessions %}
+                <div class="question">
+                    <h3>{{ test.exam.name }} | {{ test.get_mode_display }}</h3>
+                    <p class="muted">{{ test.submitted_at|date:"d M Y, h:i A" }}</p>
+                    <p>Score: {{ test.correct_count }}/{{ test.total_questions }} | Accuracy: {{ test.accuracy_percentage }}%</p>
+                    {% if test.topic %}
+                        <p>Topic focus: {{ test.topic.name }}</p>
+                    {% elif test.section %}
+                        <p>Section focus: {{ test.section.name }}</p>
+                    {% endif %}
+                    <a href="{% url 'prep:result' test.pk %}">Open result</a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">No completed tests yet.</p>
+        {% endif %}
+    </div>
+    <div class="panel">
+        <h2>In-progress Tests</h2>
+        {% if profile.in_progress_sessions %}
+            {% for test in profile.in_progress_sessions %}
+                <div class="question">
+                    <h3>{{ test.exam.name }} | {{ test.get_mode_display }}</h3>
+                    <p class="muted">Started on {{ test.started_at|date:"d M Y, h:i A" }}</p>
+                    <p>{{ test.total_questions }} questions | {{ test.duration_minutes }} minutes</p>
+                    <a href="{% url 'prep:session-detail' test.pk %}">Resume test</a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">No in-progress tests right now.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

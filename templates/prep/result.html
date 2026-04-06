@@ -5,6 +5,7 @@
 {% block content %}
 <div class="panel" style="margin-bottom: 20px;">
     <a class="button" href="{% url 'prep:home' %}">Back to dashboard</a>
+    <a class="button" href="{% url 'prep:profile' %}" style="margin-left: 10px;">View profile</a>
     <a class="button" href="{% url 'prep:start-test' %}"
        onclick="event.preventDefault(); document.getElementById('retry-test-form').submit();"
        style="margin-left: 10px;">Start similar test again</a>
