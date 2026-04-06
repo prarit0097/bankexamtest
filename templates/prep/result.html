@@ -3,6 +3,30 @@
 {% block title %}Result {{ session.pk }}{% endblock %}
 
 {% block content %}
+<div class="panel" style="margin-bottom: 20px;">
+    <a class="button" href="{% url 'prep:home' %}">Back to dashboard</a>
+    <a class="button" href="{% url 'prep:start-test' %}"
+       onclick="event.preventDefault(); document.getElementById('retry-test-form').submit();"
+       style="margin-left: 10px;">Start similar test again</a>
+    <form id="retry-test-form" method="post" action="{% url 'prep:start-test' %}" style="display: none;">
+        {% csrf_token %}
+        <input type="hidden" name="mode" value="{{ session.mode }}">
+        <input type="hidden" name="exam" value="{{ session.exam_id }}">
+        {% if session.section_id %}
+            <input type="hidden" name="section" value="{{ session.section_id }}">
+        {% endif %}
+        {% if session.topic_id %}
+            <input type="hidden" name="topic" value="{{ session.topic_id }}">
+        {% endif %}
+        <input type="hidden" name="difficulty" value="{{ session.difficulty }}">
+        <input type="hidden" name="question_count" value="{{ session.total_questions }}">
+        <input type="hidden" name="duration_minutes" value="{{ session.duration_minutes }}">
+        {% if session.metadata.use_prediction %}
+            <input type="hidden" name="use_prediction" value="on">
+        {% endif %}
+    </form>
+</div>
+
 <div class="grid">
     <div class="panel">
         <h1>Result Summary</h1>

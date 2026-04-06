@@ -222,6 +222,8 @@ class PrepPlatformTests(TestCase):
         result = self.client.get(reverse("prep:result", kwargs={"pk": session.pk}))
         self.assertEqual(result.status_code, 200)
         self.assertContains(result, "Result Summary")
+        self.assertContains(result, "Back to dashboard")
+        self.assertContains(result, "Start similar test again")
 
     def test_invalid_section_topic_combo_shows_clear_error(self):
         invalid_topic = self.exam.sections.exclude(pk=self.section.pk).first().topics.first()

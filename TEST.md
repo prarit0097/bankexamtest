@@ -526,3 +526,4 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - `.venv/` ko `.gitignore` me add kiya gaya taaki local virtual environment remote me push na ho
 - Telegram chat ID ko backend-controlled banaya gaya aur frontend form se hata diya gaya
 - Test creation form me section/topic filtering aur clearer invalid-selection feedback add ki gayi, taaki `Generate test session` click par silent failure na lage
+- Result page me navigation add ki gayi: dashboard par wapas jaane aur similar test dobara start karne ke options
