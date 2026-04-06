@@ -97,6 +97,8 @@ class PrepPlatformTests(TestCase):
         self.assertContains(response, "Deep Control Links")
         self.assertContains(response, "Uploading files...")
         self.assertContains(response, "data-upload-form")
+        self.assertContains(response, 'form.getAttribute("action")')
+        self.assertContains(response, 'submitter.value.startsWith("reset_")')
         self.assertContains(response, reverse("prep:admin-content-assets"))
         self.assertContains(response, reverse("prep:admin-question-bank"))
         self.assertContains(response, reverse("prep:admin-predictions"))

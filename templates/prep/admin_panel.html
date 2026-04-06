@@ -330,6 +330,10 @@
             const submitButton = form.querySelector("button[type='submit']");
 
             form.addEventListener("submit", function (event) {
+                const submitter = event.submitter;
+                if (submitter && submitter.value && submitter.value.startsWith("reset_")) {
+                    return;
+                }
                 event.preventDefault();
 
                 const request = new XMLHttpRequest();
@@ -374,7 +378,7 @@
                     }
                 });
 
-                request.open(form.method, form.action);
+                request.open(form.getAttribute("method") || "post", form.getAttribute("action"));
                 request.setRequestHeader("X-Requested-With", "XMLHttpRequest");
                 request.send(formData);
             });
