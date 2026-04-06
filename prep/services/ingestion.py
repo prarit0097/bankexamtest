@@ -217,11 +217,30 @@ def reset_upload_category(upload_category: str):
     deleted_batches = batches.count()
     batches.delete()
 
+    reset_batch = UploadBatch.objects.create(
+        category=upload_category,
+        label=f"{upload_category.replace('_', ' ').title()} Reset",
+        total_files=deleted_assets,
+        processed_files=deleted_assets,
+        status=IngestionStatus.COMPLETE,
+        summary={
+            "reset_notice": f"Data removed from {upload_category.replace('_', ' ')} section.",
+            "deleted_assets": deleted_assets,
+            "deleted_questions": deleted_questions,
+            "deleted_batches": deleted_batches,
+            "arrangement_notes": (
+                f"Reset completed for {upload_category.replace('_', ' ')}. "
+                f"Deleted {deleted_assets} asset(s), {deleted_questions} question(s), and {deleted_batches} previous batch record(s)."
+            ),
+        },
+    )
+
     return {
         "deleted_assets": deleted_assets,
         "deleted_questions": deleted_questions,
         "deleted_batches": deleted_batches,
         "upload_category": upload_category,
+        "reset_batch_id": reset_batch.id,
     }
 
 

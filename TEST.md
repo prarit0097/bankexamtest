@@ -575,6 +575,7 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Bulk upload intelligence add ki gayi: ek hi upload me multiple files process hoti hain, upload batch banta hai, exam/year/bucket distribution summarize hota hai, aur app ko samajh aata hai ki in documents ko backend me kaise organize karna hai
 - Bulk upload forms me live progress UI add ki gayi: upload ke dauran progress bar aur percentage dikhte hain, aur server processing phase me status text update hota hai
 - Har upload section ke saath reset button add kiya gaya; confirm karne par sirf us category ka data delete hota hai aur baaki categories safe rehti hain
+- Reset ke baad `Recent Upload Batches / Bulk arrangement summaries` me audit-style entry aati hai jo batati hai ki us section ka data remove ho gaya
 - Admin upload JS me form action collision bug fix kiya gaya; ab single upload aur reset dono sahi route par jaate hain aur `[object RadioNodeList]` path error nahi aata
 - Prediction flow ko OpenAI-assisted banaya gaya: prediction set generation ab likely paper title, summary, likely pattern, aur focus areas AI ke through enrich kar sakti hai; fallback logic bhi present hai
 - Predicted Papers page me cards clickable banaye gaye; click karne par full predicted paper detail khulta hai jahan sare predicted questions list hote hain

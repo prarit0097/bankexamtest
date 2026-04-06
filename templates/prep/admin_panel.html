@@ -219,6 +219,9 @@
             <div class="question">
                 <h3>{{ batch.label }}</h3>
                 <p class="muted">{{ batch.category }} | {{ batch.status }} | {{ batch.processed_files }}/{{ batch.total_files }} processed</p>
+                {% if batch.summary.reset_notice %}
+                    <p><strong>{{ batch.summary.reset_notice }}</strong></p>
+                {% endif %}
                 {% if batch.summary.arrangement_notes %}
                     <p>{{ batch.summary.arrangement_notes }}</p>
                 {% endif %}
@@ -227,6 +230,13 @@
                 {% endif %}
                 {% if batch.summary.year_distribution %}
                     <p class="muted">Year distribution: {{ batch.summary.year_distribution }}</p>
+                {% endif %}
+                {% if batch.summary.deleted_assets or batch.summary.deleted_questions %}
+                    <p class="muted">
+                        Deleted assets: {{ batch.summary.deleted_assets|default:0 }} |
+                        Deleted questions: {{ batch.summary.deleted_questions|default:0 }} |
+                        Removed batches: {{ batch.summary.deleted_batches|default:0 }}
+                    </p>
                 {% endif %}
             </div>
         {% endfor %}

@@ -190,6 +190,9 @@ class PrepPlatformTests(TestCase):
 
         self.assertFalse(ContentAsset.objects.filter(metadata__upload_category="test_paper").exists())
         self.assertTrue(ContentAsset.objects.filter(metadata__upload_category="previous_year_paper").exists())
+        reset_batch = UploadBatch.objects.order_by("-id").first()
+        self.assertEqual(reset_batch.category, "test_paper")
+        self.assertIn("Data removed", reset_batch.summary["reset_notice"])
 
     def test_admin_panel_upload_study_material_infers_exam_and_usage(self):
         upload = SimpleUploadedFile(
