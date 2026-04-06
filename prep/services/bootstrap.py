@@ -137,7 +137,11 @@ def _create_generated_question(exam, section, topic, difficulty, payload):
         source_type=QuestionSourceType.GENERATED,
         source_reference=payload.get("historical_pattern", "bootstrap-ai"),
         explanation_status=ExplanationStatus.GENERATED,
-        metadata={"tags": payload.get("tags", [])},
+        metadata={
+            "tags": payload.get("tags", []),
+            "quality_tier": "low",
+            "is_placeholder_generated": True,
+        },
         is_approved=True,
         is_prediction_candidate=True,
     )

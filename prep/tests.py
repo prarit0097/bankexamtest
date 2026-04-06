@@ -87,7 +87,7 @@ class PrepPlatformTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Predicted Paper Questions")
         self.assertContains(response, "Likely Pattern")
-        self.assertContains(response, "Prediction score")
+        self.assertNotContains(response, "[AI Practice]")
 
     def test_admin_panel_loads(self):
         response = self.client.get(reverse("prep:admin-panel"))

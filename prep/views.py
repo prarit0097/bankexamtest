@@ -77,7 +77,11 @@ class PredictedPaperDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        prediction_items = self.object.items.select_related("question", "question__section", "question__topic").order_by("-score", "id")
+        prediction_items = (
+            self.object.items.select_related("question", "question__section", "question__topic")
+            .exclude(question__metadata__is_placeholder_generated=True)
+            .order_by("-score", "id")
+        )
         context["prediction_items"] = prediction_items
         context["paper_sections"] = _group_prediction_items(prediction_items)
         return context

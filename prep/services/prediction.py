@@ -20,23 +20,28 @@ def generate_prediction_set(exam, section=None, topic=None):
     if verified_queryset.exists():
         queryset = verified_queryset
     else:
-        queryset = queryset.exclude(stem__startswith="[AI Practice]")
+        queryset = queryset.exclude(metadata__is_placeholder_generated=True)
 
     if not queryset.exists():
         queryset = ensure_generated_questions(exam, section, topic, count=15)
     elif hasattr(queryset, "exclude"):
-        filtered_queryset = queryset.exclude(stem__startswith="[AI Practice]")
+        filtered_queryset = queryset.exclude(metadata__is_placeholder_generated=True)
         if filtered_queryset.exists():
             queryset = filtered_queryset
 
     topic_weights = Counter()
     question_scores = defaultdict(float)
-    for question in queryset:
+    selected_questions = list(queryset[:25])
+    for question in selected_questions:
         exam_year = question.metadata.get("exam_year", timezone.localdate().year)
         recency_bonus = 1.0 if exam_year >= lookback_floor else 0.5
         key = question.topic_id or question.section_id or question.id
         topic_weights[key] += recency_bonus
         question_scores[question.id] += recency_bonus
+
+    has_quality_questions = any(
+        not question.metadata.get("is_placeholder_generated", False) for question in selected_questions
+    )
 
     prediction_set = PredictionSet.objects.create(
         exam=exam,
@@ -45,11 +50,13 @@ def generate_prediction_set(exam, section=None, topic=None):
         title=f"Likely-question practice set for {exam.name}",
         description="Probability-guided practice set assembled from historical trends and approved question bank.",
         generated_for=timezone.localdate(),
-        weight_snapshot={"topic_weights": dict(topic_weights)},
+        weight_snapshot={
+            "topic_weights": dict(topic_weights),
+            "has_quality_questions": has_quality_questions,
+        },
         is_active=True,
     )
 
-    selected_questions = list(queryset[:25])
     for question in selected_questions:
         weight_key = question.topic_id or question.section_id or question.id
         PredictionSetQuestion.objects.create(
