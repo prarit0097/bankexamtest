@@ -59,6 +59,11 @@ def build_admin_dashboard():
             "test_sessions": TestSession.objects.count(),
             "test_results": TestResult.objects.count(),
         },
+        "upload_category_counts": {
+            "previous_year_paper": ContentAsset.objects.filter(metadata__upload_category="previous_year_paper").count(),
+            "test_paper": ContentAsset.objects.filter(metadata__upload_category="test_paper").count(),
+            "study_material": ContentAsset.objects.filter(metadata__upload_category="study_material").count(),
+        },
         "operations": {
             "pending_assets": asset_status_counts.get(IngestionStatus.PENDING, 0),
             "failed_assets": asset_status_counts.get(IngestionStatus.FAILED, 0),

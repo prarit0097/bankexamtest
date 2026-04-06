@@ -55,8 +55,9 @@
     <div class="panel">
         <div class="section-title-row">
             <h2>Upload Previous Year Question Papers</h2>
-            <span class="pill">Auto scan exam + year + usage</span>
+            <span class="pill">Uploaded: {{ admin_panel.upload_category_counts.previous_year_paper }}</span>
         </div>
+        <p class="muted">Current files in this section: {{ admin_panel.upload_category_counts.previous_year_paper }}</p>
         <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data" data-upload-form>
             {% csrf_token %}
             <input type="hidden" name="action" value="upload_previous_year_paper">
@@ -96,8 +97,9 @@
     <div class="panel">
         <div class="section-title-row">
             <h2>Upload Test Papers</h2>
-            <span class="pill">Auto route into practice system</span>
+            <span class="pill">Uploaded: {{ admin_panel.upload_category_counts.test_paper }}</span>
         </div>
+        <p class="muted">Current files in this section: {{ admin_panel.upload_category_counts.test_paper }}</p>
         <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data" data-upload-form>
             {% csrf_token %}
             <input type="hidden" name="action" value="upload_test_paper">
@@ -137,8 +139,9 @@
     <div class="panel">
         <div class="section-title-row">
             <h2>Upload Study Materials</h2>
-            <span class="pill">Auto route into explanation support</span>
+            <span class="pill">Uploaded: {{ admin_panel.upload_category_counts.study_material }}</span>
         </div>
+        <p class="muted">Current files in this section: {{ admin_panel.upload_category_counts.study_material }}</p>
         <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data" data-upload-form>
             {% csrf_token %}
             <input type="hidden" name="action" value="upload_study_material">

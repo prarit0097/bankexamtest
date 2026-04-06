@@ -105,6 +105,7 @@ class PrepPlatformTests(TestCase):
         self.assertContains(response, reverse("prep:admin-test-sessions"))
         self.assertContains(response, reverse("prep:admin-delivery-logs"))
         self.assertContains(response, reverse("prep:admin-ingestion-logs"))
+        self.assertContains(response, "Current files in this section: 0")
         self.assertNotContains(response, "Django admin")
 
     def test_admin_panel_generate_predictions_action(self):
@@ -144,6 +145,9 @@ class PrepPlatformTests(TestCase):
         self.assertEqual(asset.metadata["document_year"], "2023")
         self.assertEqual(asset.metadata["inferred_exam_code"], "IBPS-PO")
         self.assertIn("trend analysis", asset.metadata["recommended_usage"])
+
+        follow_up = self.client.get(reverse("prep:admin-panel"))
+        self.assertContains(follow_up, "Current files in this section: 2")
 
     def test_admin_panel_upload_test_paper_infers_exam_and_usage(self):
         upload = SimpleUploadedFile(
