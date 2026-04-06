@@ -62,6 +62,11 @@ class PrepPlatformTests(TestCase):
         self.assertContains(response, "Admin Panel")
         self.assertContains(response, "Run Admin Actions")
         self.assertContains(response, "Deep Control Links")
+        self.assertContains(response, reverse("prep:admin-content-assets"))
+        self.assertContains(response, reverse("prep:admin-question-bank"))
+        self.assertContains(response, reverse("prep:admin-predictions"))
+        self.assertContains(response, reverse("prep:admin-test-sessions"))
+        self.assertContains(response, reverse("prep:admin-delivery-logs"))
 
     def test_admin_panel_generate_predictions_action(self):
         response = self.client.post(reverse("prep:admin-panel"), {"action": "generate_predictions"})
@@ -70,6 +75,14 @@ class PrepPlatformTests(TestCase):
         follow_up = self.client.get(reverse("prep:admin-panel"))
         self.assertContains(follow_up, "Generated prediction sets")
         self.assertContains(follow_up, "Recent Prediction Sets")
+
+    def test_admin_section_pages_are_accessible(self):
+        self.assertEqual(self.client.get(reverse("prep:admin-content-assets")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("prep:admin-question-bank")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("prep:admin-predictions")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("prep:admin-test-sessions")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("prep:admin-delivery-logs")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("prep:admin-ingestion-logs")).status_code, 200)
 
     def test_profile_page_loads_empty_state(self):
         response = self.client.get(reverse("prep:profile"))

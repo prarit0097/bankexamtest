@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}{{ section_title }}{% endblock %}
+
+{% block content %}
+<section class="profile-shell">
+    <div class="panel profile-banner">
+        <div class="profile-grid">
+            <div>
+                <span class="pill">Admin Section</span>
+                <div class="kicker">Focused Control View</div>
+                <h1>{{ section_title }}</h1>
+                <p class="muted">{{ section_intro }}</p>
+            </div>
+            <div class="mini-card">
+                <div class="kicker">Quick Access</div>
+                <h2>Controls</h2>
+                <div class="toolbar" style="margin-top: 16px;">
+                    <a class="button secondary" href="{% url 'prep:admin-panel' %}">Back to admin panel</a>
+                    <a class="button" href="{{ admin_url }}">Open Django admin</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="section-title-row">
+        <h2>{{ section_title }}</h2>
+        <span class="pill">{{ section_items|length }} recent records</span>
+    </div>
+    {% if section_items %}
+        {% for item in section_items %}
+            <div class="question">
+                {% if item_type == "content" %}
+                    <h3>{{ item.title }}</h3>
+                    <p class="muted">{{ item.get_asset_type_display }} | {{ item.ingestion_status }}{% if item.exam %} | {{ item.exam.name }}{% endif %}</p>
+                    <p>{{ item.source_notes|default:"No source notes added yet."|truncatechars:180 }}</p>
+                {% elif item_type == "question" %}
+                    <h3>{{ item.stem|truncatechars:140 }}</h3>
+                    <p class="muted">{{ item.exam.name }}{% if item.section %} | {{ item.section.name }}{% endif %}{% if item.topic %} | {{ item.topic.name }}{% endif %}</p>
+                    <p>Source: {{ item.source_type }} | Difficulty: {{ item.get_difficulty_display }} | Approved: {{ item.is_approved }}</p>
+                {% elif item_type == "prediction" %}
+                    <h3>{{ item.title }}</h3>
+                    <p class="muted">{{ item.exam.name }} | {{ item.generated_for }}</p>
+                    <p>{{ item.description|truncatechars:180 }}</p>
+                {% elif item_type == "session" %}
+                    <h3>{{ item.exam.name }} | {{ item.get_mode_display }}</h3>
+                    <p class="muted">{{ item.get_status_display }} | {{ item.started_at|date:"d M Y, h:i A" }}</p>
+                    <p>Score: {{ item.correct_count }}/{{ item.total_questions }} | Difficulty: {{ item.get_difficulty_display }}</p>
+                {% elif item_type == "delivery" %}
+                    <h3>Delivery {{ item.report_date }}</h3>
+                    <p class="muted">{{ item.status }} | {{ item.created_at|date:"d M Y, h:i A" }}</p>
+                    <p>{{ item.error_message|default:"No delivery error message."|truncatechars:180 }}</p>
+                {% elif item_type == "ingestion" %}
+                    <h3>{{ item.asset.title }}</h3>
+                    <p class="muted">{{ item.status }} | {{ item.created_at|date:"d M Y, h:i A" }}</p>
+                    <p>{{ item.message|truncatechars:180 }}</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="muted">No records available in this section yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

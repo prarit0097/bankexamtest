@@ -89,22 +89,22 @@
             <span class="pill">Open full tools</span>
         </div>
         {% for item in admin_panel.admin_links %}
-            <div class="question">
-                <a class="link-arrow" href="{{ item.url }}">{{ item.label }}</a>
-            </div>
+            <a class="question link-arrow" href="{{ item.url }}" style="display:block;">
+                {{ item.label }}
+            </a>
         {% endfor %}
     </div>
     <div class="panel">
         <div class="section-title-row">
             <h2>Recent Content Assets</h2>
-            <a class="link-arrow" href="/admin/prep/contentasset/">Open all</a>
+            <a class="link-arrow" href="{% url 'prep:admin-content-assets' %}">Open all</a>
         </div>
         {% if admin_panel.recent_assets %}
             {% for asset in admin_panel.recent_assets %}
-                <div class="question">
+                <a class="question link-arrow" href="{% url 'prep:admin-content-assets' %}" style="display:block;">
                     <h3>{{ asset.title }}</h3>
                     <p class="muted">{{ asset.get_asset_type_display }} | {{ asset.ingestion_status }}{% if asset.exam %} | {{ asset.exam.name }}{% endif %}</p>
-                </div>
+                </a>
             {% endfor %}
         {% else %}
             <p class="muted">No content assets available yet.</p>
@@ -116,15 +116,15 @@
     <div class="panel">
         <div class="section-title-row">
             <h2>Recent Test Sessions</h2>
-            <a class="link-arrow" href="/admin/prep/testsession/">Monitor all</a>
+            <a class="link-arrow" href="{% url 'prep:admin-test-sessions' %}">Monitor all</a>
         </div>
         {% if admin_panel.recent_sessions %}
             {% for session in admin_panel.recent_sessions %}
-                <div class="question">
+                <a class="question link-arrow" href="{% url 'prep:admin-test-sessions' %}" style="display:block;">
                     <h3>{{ session.exam.name }} | {{ session.get_mode_display }}</h3>
                     <p class="muted">{{ session.get_status_display }} | {{ session.started_at|date:"d M Y, h:i A" }}</p>
                     <p>Score: {{ session.correct_count }}/{{ session.total_questions }} | Difficulty: {{ session.get_difficulty_display }}</p>
-                </div>
+                </a>
             {% endfor %}
         {% else %}
             <p class="muted">No test sessions yet.</p>
@@ -133,15 +133,15 @@
     <div class="panel">
         <div class="section-title-row">
             <h2>Recent Prediction Sets</h2>
-            <a class="link-arrow" href="/admin/prep/predictionset/">Open all</a>
+            <a class="link-arrow" href="{% url 'prep:admin-predictions' %}">Open all</a>
         </div>
         {% if admin_panel.recent_predictions %}
             {% for prediction in admin_panel.recent_predictions %}
-                <div class="question">
+                <a class="question link-arrow" href="{% url 'prep:admin-predictions' %}" style="display:block;">
                     <h3>{{ prediction.title }}</h3>
                     <p class="muted">{{ prediction.exam.name }} | {{ prediction.generated_for }}</p>
                     <p>{{ prediction.description }}</p>
-                </div>
+                </a>
             {% endfor %}
         {% else %}
             <p class="muted">No prediction sets generated yet.</p>
@@ -152,15 +152,15 @@
 <section class="panel">
     <div class="section-title-row">
         <h2>Recent Ingestion Logs</h2>
-        <a class="link-arrow" href="/admin/prep/ingestionlog/">Open logs</a>
+        <a class="link-arrow" href="{% url 'prep:admin-ingestion-logs' %}">Open logs</a>
     </div>
     {% if admin_panel.recent_ingestion_logs %}
         {% for log in admin_panel.recent_ingestion_logs %}
-            <div class="question">
+            <a class="question link-arrow" href="{% url 'prep:admin-ingestion-logs' %}" style="display:block;">
                 <h3>{{ log.asset.title }}</h3>
                 <p class="muted">{{ log.status }} | {{ log.created_at|date:"d M Y, h:i A" }}</p>
                 <p>{{ log.message }}</p>
-            </div>
+            </a>
         {% endfor %}
     {% else %}
         <p class="muted">No ingestion logs recorded yet.</p>
