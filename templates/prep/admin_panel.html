@@ -51,6 +51,78 @@
 </section>
 
 <section class="grid">
+    <div class="panel">
+        <div class="section-title-row">
+            <h2>Upload Previous Year Question Papers</h2>
+            <span class="pill">Auto scan exam + year + usage</span>
+        </div>
+        <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="upload_previous_year_paper">
+            {% for field in previous_year_form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="muted">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit">Upload previous year paper</button>
+        </form>
+    </div>
+    <div class="panel">
+        <div class="section-title-row">
+            <h2>Upload Test Papers</h2>
+            <span class="pill">Auto route into practice system</span>
+        </div>
+        <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="upload_test_paper">
+            {% for field in test_paper_form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="muted">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit">Upload test paper</button>
+        </form>
+    </div>
+    <div class="panel">
+        <div class="section-title-row">
+            <h2>Upload Study Materials</h2>
+            <span class="pill">Auto route into explanation support</span>
+        </div>
+        <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="upload_study_material">
+            {% for field in study_material_form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="muted">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit">Upload study material</button>
+        </form>
+    </div>
+</section>
+
+<section class="grid">
     <div class="mini-card">
         <div class="kicker">Platform Map</div>
         <h2>Overview</h2>

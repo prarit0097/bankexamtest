@@ -1,9 +1,11 @@
 from datetime import timedelta
+import tempfile
 from unittest.mock import Mock, patch
 
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from prep.models import (
     ContentAsset,
@@ -40,6 +42,13 @@ class PrepPlatformTests(TestCase):
         self.exam = Exam.objects.get(code="IBPS-PO")
         self.section = self.exam.sections.first()
         self.topic = self.section.topics.first()
+        self._media_dir = tempfile.TemporaryDirectory()
+        self.override_media = override_settings(MEDIA_ROOT=self._media_dir.name)
+        self.override_media.enable()
+
+    def tearDown(self):
+        self.override_media.disable()
+        self._media_dir.cleanup()
 
     def test_home_page_loads(self):
         response = self.client.get(reverse("prep:home"))
@@ -77,6 +86,67 @@ class PrepPlatformTests(TestCase):
         follow_up = self.client.get(reverse("prep:admin-panel"))
         self.assertContains(follow_up, "Generated prediction sets")
         self.assertContains(follow_up, "Recent Prediction Sets")
+
+    def test_admin_panel_upload_previous_year_paper_infers_exam_and_year(self):
+        upload = SimpleUploadedFile(
+            "ibps-po-2023.txt",
+            b"IBPS PO 2023 previous year paper. Quantitative Aptitude and Reasoning Ability practice.",
+            content_type="text/plain",
+        )
+        response = self.client.post(
+            reverse("prep:admin-panel"),
+            {
+                "action": "upload_previous_year_paper",
+                "title": "IBPS PO 2023 Paper",
+                "uploaded_file": upload,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        asset = ContentAsset.objects.latest("id")
+        self.assertEqual(asset.metadata["upload_category"], "previous_year_paper")
+        self.assertEqual(asset.metadata["document_year"], "2023")
+        self.assertEqual(asset.metadata["inferred_exam_code"], "IBPS-PO")
+        self.assertIn("trend analysis", asset.metadata["recommended_usage"])
+
+    def test_admin_panel_upload_test_paper_infers_exam_and_usage(self):
+        upload = SimpleUploadedFile(
+            "sbi-clerk-mock-2024.txt",
+            b"SBI Clerk 2024 mock test paper with arithmetic, puzzles, and English language sections.",
+            content_type="text/plain",
+        )
+        response = self.client.post(
+            reverse("prep:admin-panel"),
+            {
+                "action": "upload_test_paper",
+                "title": "SBI Clerk Mock 2024",
+                "uploaded_file": upload,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        asset = ContentAsset.objects.latest("id")
+        self.assertEqual(asset.metadata["upload_category"], "test_paper")
+        self.assertEqual(asset.metadata["inferred_exam_code"], "SBI-CLERK")
+        self.assertIn("mock test benchmarking", asset.metadata["recommended_usage"])
+
+    def test_admin_panel_upload_study_material_infers_exam_and_usage(self):
+        upload = SimpleUploadedFile(
+            "rbi-assistant-guide.txt",
+            b"RBI Assistant study material covering Indian Economy, Current Affairs, and Reading Comprehension for 2022 revision.",
+            content_type="text/plain",
+        )
+        response = self.client.post(
+            reverse("prep:admin-panel"),
+            {
+                "action": "upload_study_material",
+                "title": "RBI Assistant Guide",
+                "uploaded_file": upload,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        asset = ContentAsset.objects.latest("id")
+        self.assertEqual(asset.metadata["upload_category"], "study_material")
+        self.assertEqual(asset.metadata["inferred_exam_code"], "RBI-ASST")
+        self.assertIn("RAG explanations", asset.metadata["recommended_usage"])
 
     def test_admin_section_pages_are_accessible(self):
         for route_name in (

@@ -4,7 +4,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import DetailView, FormView, TemplateView
 
-from prep.forms import StudentNameForm, TestCreationForm
+from prep.forms import AdminAssetUploadForm, StudentNameForm, TestCreationForm
 from prep.models import (
     ContentAsset,
     IngestionLog,
@@ -18,6 +18,7 @@ from prep.models import (
 )
 from prep.services import (
     build_admin_dashboard,
+    build_content_asset_from_upload,
     build_profile_dashboard,
     create_test_session,
     ensure_default_taxonomy,
@@ -60,10 +61,21 @@ class AdminPanelView(TemplateView):
         ensure_default_taxonomy()
         context = super().get_context_data(**kwargs)
         context["admin_panel"] = build_admin_dashboard()
+        context["previous_year_form"] = kwargs.get("previous_year_form") or AdminAssetUploadForm(
+            upload_label="Previous year paper file"
+        )
+        context["test_paper_form"] = kwargs.get("test_paper_form") or AdminAssetUploadForm(
+            upload_label="Test paper file"
+        )
+        context["study_material_form"] = kwargs.get("study_material_form") or AdminAssetUploadForm(
+            upload_label="Study material file"
+        )
         return context
 
     def post(self, request, *args, **kwargs):
         action = request.POST.get("action", "").strip()
+        if action in {"upload_previous_year_paper", "upload_test_paper", "upload_study_material"}:
+            return self._handle_upload(request, action)
         try:
             message = run_admin_action(action)
         except ValueError:
@@ -71,6 +83,41 @@ class AdminPanelView(TemplateView):
         else:
             messages.success(request, message)
         return redirect("prep:admin-panel")
+
+    def _handle_upload(self, request, action):
+        form_map = {
+            "upload_previous_year_paper": ("previous_year_paper", AdminAssetUploadForm(request.POST, request.FILES, upload_label="Previous year paper file")),
+            "upload_test_paper": ("test_paper", AdminAssetUploadForm(request.POST, request.FILES, upload_label="Test paper file")),
+            "upload_study_material": ("study_material", AdminAssetUploadForm(request.POST, request.FILES, upload_label="Study material file")),
+        }
+        upload_category, form = form_map[action]
+        if form.is_valid():
+            asset = build_content_asset_from_upload(
+                upload_category=upload_category,
+                uploaded_file=form.cleaned_data["uploaded_file"],
+                title=form.cleaned_data.get("title", ""),
+            )
+            inferred_exam = asset.metadata.get("inferred_exam_name", "Unknown exam")
+            inferred_year = asset.metadata.get("document_year") or "Unknown year"
+            messages.success(
+                request,
+                f"Uploaded {asset.title}. Inferred exam: {inferred_exam}. Inferred year: {inferred_year}.",
+            )
+            return redirect("prep:admin-panel")
+
+        messages.error(request, "Upload failed. Please correct the file form and try again.")
+        context = {
+            "previous_year_form": AdminAssetUploadForm(upload_label="Previous year paper file"),
+            "test_paper_form": AdminAssetUploadForm(upload_label="Test paper file"),
+            "study_material_form": AdminAssetUploadForm(upload_label="Study material file"),
+        }
+        if upload_category == "previous_year_paper":
+            context["previous_year_form"] = form
+        elif upload_category == "test_paper":
+            context["test_paper_form"] = form
+        else:
+            context["study_material_form"] = form
+        return self.render_to_response(self.get_context_data(**context))
 
 
 class AdminContentAssetsView(TemplateView):

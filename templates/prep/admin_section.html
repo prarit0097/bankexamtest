@@ -34,6 +34,13 @@
                 {% if item_type == "content" %}
                     <h3>{{ item.title }}</h3>
                     <p class="muted">{{ item.get_asset_type_display }} | {{ item.ingestion_status }}{% if item.exam %} | {{ item.exam.name }}{% endif %}</p>
+                    {% if item.metadata.document_year or item.metadata.recommended_usage %}
+                        <p class="muted">
+                            {% if item.metadata.document_year %}Year: {{ item.metadata.document_year }}{% endif %}
+                            {% if item.metadata.document_year and item.metadata.recommended_usage %} | {% endif %}
+                            {% if item.metadata.recommended_usage %}Usage: {{ item.metadata.recommended_usage }}{% endif %}
+                        </p>
+                    {% endif %}
                     <p>{{ item.source_notes|default:"No source notes added yet."|truncatechars:180 }}</p>
                 {% elif item_type == "question" %}
                     <h3>{{ item.stem|truncatechars:140 }}</h3>

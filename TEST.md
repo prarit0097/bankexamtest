@@ -163,6 +163,10 @@ Admin kar sakta hai:
 - prediction set review
 - Telegram logs dekhna
 - admin panel se quick overview aur action buttons use karna
+- previous year papers upload karna
+- test papers upload karna
+- study materials upload karna
+- upload ke baad app se exam/year/usage auto infer karwana
 
 Simple words:
 Admin app ka teacher/control-room part hai.
@@ -560,3 +564,4 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - App scan ke basis par in-app admin panel add kiya gaya jahan se platform overview, quick actions, recent assets, recent tests, prediction sets, aur deep Django admin links access kiye ja sakte hain
 - Admin panel ke major options ko dedicated in-app admin section pages se connect kiya gaya, taaki click karne par proper result page khule
 - End-user admin UX me saare visible Django admin links/buttons remove kiye gaye; ab sirf in-app admin pages dikhte hain
+- Admin panel me 3 structured upload flows add kiye gaye: previous year papers, test papers, aur study materials; upload ke baad app auto-scan karke exam, year, aur recommended usage infer karta hai
