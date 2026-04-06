@@ -573,3 +573,4 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Prediction flow ko OpenAI-assisted banaya gaya: prediction set generation ab likely paper title, summary, likely pattern, aur focus areas AI ke through enrich kar sakti hai; fallback logic bhi present hai
 - Predicted Papers page me cards clickable banaye gaye; click karne par full predicted paper detail khulta hai jahan sare predicted questions list hote hain
 - Predicted paper detail ko real-paper style me improve kiya gaya: section grouping, full question list, likely answer highlighting, aur weak placeholder `[AI Practice]` items ko filter karne ki logic add ki gayi
+- Old generated placeholder stems ko bhi predicted paper detail view se explicitly hide kiya gaya, taki purane stored sets me bhi fake-looking questions na dikhen

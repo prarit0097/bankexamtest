@@ -80,6 +80,7 @@ class PredictedPaperDetailView(DetailView):
         prediction_items = (
             self.object.items.select_related("question", "question__section", "question__topic")
             .exclude(question__metadata__is_placeholder_generated=True)
+            .exclude(question__stem__startswith="[AI Practice]")
             .order_by("-score", "id")
         )
         context["prediction_items"] = prediction_items
