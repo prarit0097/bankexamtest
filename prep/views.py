@@ -18,7 +18,7 @@ from prep.models import (
 )
 from prep.services import (
     build_admin_dashboard,
-    build_content_asset_from_upload,
+    build_content_assets_from_uploads,
     build_profile_dashboard,
     create_test_session,
     ensure_default_taxonomy,
@@ -92,16 +92,19 @@ class AdminPanelView(TemplateView):
         }
         upload_category, form = form_map[action]
         if form.is_valid():
-            asset = build_content_asset_from_upload(
+            result = build_content_assets_from_uploads(
                 upload_category=upload_category,
-                uploaded_file=form.cleaned_data["uploaded_file"],
+                uploaded_files=form.cleaned_data["uploaded_files"],
                 title=form.cleaned_data.get("title", ""),
             )
-            inferred_exam = asset.metadata.get("inferred_exam_name", "Unknown exam")
-            inferred_year = asset.metadata.get("document_year") or "Unknown year"
+            batch = result["batch"]
+            assets = result["assets"]
+            first_asset = assets[0] if assets else None
+            inferred_exam = first_asset.metadata.get("inferred_exam_name", "Unknown exam") if first_asset else "Unknown exam"
+            inferred_year = first_asset.metadata.get("document_year") or "Unknown year" if first_asset else "Unknown year"
             messages.success(
                 request,
-                f"Uploaded {asset.title}. Inferred exam: {inferred_exam}. Inferred year: {inferred_year}.",
+                f"Uploaded {len(assets)} file(s) in batch '{batch.label}'. Primary inferred exam: {inferred_exam}. Primary inferred year: {inferred_year}.",
             )
             return redirect("prep:admin-panel")
 

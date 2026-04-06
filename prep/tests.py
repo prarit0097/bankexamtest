@@ -20,6 +20,7 @@ from prep.models import (
     TelegramLink,
     TestSession,
     TestStatus,
+    UploadBatch,
 )
 from prep.services.assessment import create_test_session, submit_test_session
 from prep.services.ingestion import ingest_asset
@@ -88,9 +89,14 @@ class PrepPlatformTests(TestCase):
         self.assertContains(follow_up, "Recent Prediction Sets")
 
     def test_admin_panel_upload_previous_year_paper_infers_exam_and_year(self):
-        upload = SimpleUploadedFile(
+        upload_one = SimpleUploadedFile(
             "ibps-po-2023.txt",
             b"IBPS PO 2023 previous year paper. Quantitative Aptitude and Reasoning Ability practice.",
+            content_type="text/plain",
+        )
+        upload_two = SimpleUploadedFile(
+            "ibps-clerk-2022.txt",
+            b"IBPS Clerk 2022 previous year paper. Puzzles, Arithmetic, and Banking Awareness questions.",
             content_type="text/plain",
         )
         response = self.client.post(
@@ -98,11 +104,15 @@ class PrepPlatformTests(TestCase):
             {
                 "action": "upload_previous_year_paper",
                 "title": "IBPS PO 2023 Paper",
-                "uploaded_file": upload,
+                "uploaded_files": [upload_one, upload_two],
             },
         )
         self.assertEqual(response.status_code, 302)
-        asset = ContentAsset.objects.latest("id")
+        batch = UploadBatch.objects.latest("id")
+        self.assertEqual(batch.category, "previous_year_paper")
+        self.assertEqual(batch.total_files, 2)
+        self.assertIn("historical-paper-bank", batch.summary["bucket_distribution"])
+        asset = ContentAsset.objects.filter(upload_batch=batch).order_by("id").first()
         self.assertEqual(asset.metadata["upload_category"], "previous_year_paper")
         self.assertEqual(asset.metadata["document_year"], "2023")
         self.assertEqual(asset.metadata["inferred_exam_code"], "IBPS-PO")
@@ -119,7 +129,7 @@ class PrepPlatformTests(TestCase):
             {
                 "action": "upload_test_paper",
                 "title": "SBI Clerk Mock 2024",
-                "uploaded_file": upload,
+                "uploaded_files": [upload],
             },
         )
         self.assertEqual(response.status_code, 302)
@@ -139,7 +149,7 @@ class PrepPlatformTests(TestCase):
             {
                 "action": "upload_study_material",
                 "title": "RBI Assistant Guide",
-                "uploaded_file": upload,
+                "uploaded_files": [upload],
             },
         )
         self.assertEqual(response.status_code, 302)

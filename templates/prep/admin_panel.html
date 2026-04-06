@@ -17,6 +17,7 @@
                 <div class="profile-badges">
                     <div class="badge-ghost">{{ admin_panel.overview.questions }} total questions</div>
                     <div class="badge-ghost">{{ admin_panel.overview.content_assets }} content assets</div>
+                    <div class="badge-ghost">{{ admin_panel.overview.upload_batches }} upload batches</div>
                     <div class="badge-ghost">{{ admin_panel.overview.test_sessions }} total sessions</div>
                     <div class="badge-ghost">{{ admin_panel.overview.prediction_sets }} prediction sets</div>
                 </div>
@@ -71,7 +72,7 @@
                     {% endfor %}
                 </div>
             {% endfor %}
-            <button type="submit">Upload previous year paper</button>
+            <button type="submit">Upload previous year paper batch</button>
         </form>
     </div>
     <div class="panel">
@@ -94,7 +95,7 @@
                     {% endfor %}
                 </div>
             {% endfor %}
-            <button type="submit">Upload test paper</button>
+            <button type="submit">Upload test paper batch</button>
         </form>
     </div>
     <div class="panel">
@@ -117,7 +118,7 @@
                     {% endfor %}
                 </div>
             {% endfor %}
-            <button type="submit">Upload study material</button>
+            <button type="submit">Upload study material batch</button>
         </form>
     </div>
 </section>
@@ -152,6 +153,32 @@
             </div>
         {% endfor %}
     </div>
+</section>
+
+<section class="panel">
+    <div class="section-title-row">
+        <h2>Recent Upload Batches</h2>
+        <span class="pill">Bulk arrangement summaries</span>
+    </div>
+    {% if admin_panel.recent_batches %}
+        {% for batch in admin_panel.recent_batches %}
+            <div class="question">
+                <h3>{{ batch.label }}</h3>
+                <p class="muted">{{ batch.category }} | {{ batch.status }} | {{ batch.processed_files }}/{{ batch.total_files }} processed</p>
+                {% if batch.summary.arrangement_notes %}
+                    <p>{{ batch.summary.arrangement_notes }}</p>
+                {% endif %}
+                {% if batch.summary.exam_distribution %}
+                    <p class="muted">Exam distribution: {{ batch.summary.exam_distribution }}</p>
+                {% endif %}
+                {% if batch.summary.year_distribution %}
+                    <p class="muted">Year distribution: {{ batch.summary.year_distribution }}</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="muted">No upload batches yet.</p>
+    {% endif %}
 </section>
 
 <section class="grid">

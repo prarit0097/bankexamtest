@@ -17,6 +17,7 @@ from prep.models import (
     TestStatus,
     TestTemplate,
     Topic,
+    UploadBatch,
 )
 from prep.services.ingestion import ingest_asset
 from prep.services.prediction import generate_prediction_set
@@ -30,6 +31,7 @@ def build_admin_dashboard():
     sessions = TestSession.objects.select_related("exam", "section", "topic").order_by("-started_at")
     predictions = PredictionSet.objects.select_related("exam").order_by("-generated_for", "-created_at")
     ingestion_logs = IngestionLog.objects.select_related("asset").order_by("-created_at")
+    upload_batches = UploadBatch.objects.order_by("-created_at")
 
     question_source_counts = Counter(
         Question.objects.values_list("source_type", flat=True)
@@ -51,6 +53,7 @@ def build_admin_dashboard():
             "topics": Topic.objects.count(),
             "questions": Question.objects.count(),
             "content_assets": ContentAsset.objects.count(),
+            "upload_batches": UploadBatch.objects.count(),
             "prediction_sets": PredictionSet.objects.count(),
             "test_templates": TestTemplate.objects.count(),
             "test_sessions": TestSession.objects.count(),
@@ -73,6 +76,7 @@ def build_admin_dashboard():
         "recent_sessions": list(sessions[:6]),
         "recent_predictions": list(predictions[:5]),
         "recent_ingestion_logs": list(ingestion_logs[:6]),
+        "recent_batches": list(upload_batches[:5]),
         "attention_items": _build_attention_items(asset_status_counts, session_status_counts, delivery_status_counts),
         "admin_links": [
             {"label": "Manage content assets", "url": "/admin-panel/content-assets/"},

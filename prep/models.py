@@ -91,6 +91,25 @@ class IngestionStatus(models.TextChoices):
     FAILED = "failed", "Failed"
 
 
+class UploadBatch(TimeStampedModel):
+    category = models.CharField(max_length=32)
+    label = models.CharField(max_length=255)
+    total_files = models.PositiveIntegerField(default=0)
+    processed_files = models.PositiveIntegerField(default=0)
+    status = models.CharField(
+        max_length=32,
+        choices=IngestionStatus.choices,
+        default=IngestionStatus.PENDING,
+    )
+    summary = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return self.label
+
+
 class ContentAsset(TimeStampedModel):
     title = models.CharField(max_length=255)
     exam = models.ForeignKey(
@@ -101,6 +120,13 @@ class ContentAsset(TimeStampedModel):
         blank=True,
     )
     asset_type = models.CharField(max_length=32, choices=ContentAssetType.choices)
+    upload_batch = models.ForeignKey(
+        UploadBatch,
+        on_delete=models.SET_NULL,
+        related_name="assets",
+        null=True,
+        blank=True,
+    )
     uploaded_file = models.FileField(upload_to="uploads/%Y/%m/", blank=True)
     source_url = models.URLField(blank=True)
     source_notes = models.TextField(blank=True)

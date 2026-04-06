@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from django import forms
+from django.core.exceptions import ValidationError
 
 from prep.models import DifficultyLevel, Exam, Section, TestMode, Topic
 from prep.services.taxonomy import ensure_default_taxonomy
@@ -90,22 +91,40 @@ class StudentNameForm(forms.Form):
     )
 
 
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    widget = MultipleFileInput
+
+    def clean(self, data, initial=None):
+        single_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            files = [single_clean(item, initial) for item in data]
+        else:
+            files = [single_clean(data, initial)]
+        return files
+
+
 class AdminAssetUploadForm(forms.Form):
     title = forms.CharField(
         max_length=255,
         required=False,
         help_text="Optional. Leave blank to use the uploaded filename as the title.",
     )
-    uploaded_file = forms.FileField(help_text="PDF, TXT, or similar study document.")
+    uploaded_files = MultipleFileField(help_text="Upload one or many PDF, TXT, or similar study documents.")
 
     def __init__(self, *args, upload_label="Upload file", **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["uploaded_file"].label = upload_label
+        self.fields["uploaded_files"].label = upload_label
+        self.fields["uploaded_files"].help_text = "You can upload 1 file or 50+ files together."
 
-    def clean_uploaded_file(self):
-        uploaded_file = self.cleaned_data["uploaded_file"]
-        suffix = Path(uploaded_file.name).suffix.lower()
+    def clean_uploaded_files(self):
+        uploaded_files = self.cleaned_data["uploaded_files"]
         allowed = {".pdf", ".txt", ".md", ".doc", ".docx"}
-        if suffix not in allowed:
-            raise forms.ValidationError("Upload a PDF, TXT, MD, DOC, or DOCX file.")
-        return uploaded_file
+        for uploaded_file in uploaded_files:
+            suffix = Path(uploaded_file.name).suffix.lower()
+            if suffix not in allowed:
+                raise ValidationError("Upload only PDF, TXT, MD, DOC, or DOCX files.")
+        return uploaded_files

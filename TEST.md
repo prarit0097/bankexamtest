@@ -167,6 +167,9 @@ Admin kar sakta hai:
 - test papers upload karna
 - study materials upload karna
 - upload ke baad app se exam/year/usage auto infer karwana
+- ek hi batch me multiple files upload karna
+- 50+ files ko backend batches me arrange karna
+- batch summary ke through dekhna ki kaunse exams/years/usage buckets detect hue
 
 Simple words:
 Admin app ka teacher/control-room part hai.
@@ -565,3 +568,4 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Admin panel ke major options ko dedicated in-app admin section pages se connect kiya gaya, taaki click karne par proper result page khule
 - End-user admin UX me saare visible Django admin links/buttons remove kiye gaye; ab sirf in-app admin pages dikhte hain
 - Admin panel me 3 structured upload flows add kiye gaye: previous year papers, test papers, aur study materials; upload ke baad app auto-scan karke exam, year, aur recommended usage infer karta hai
+- Bulk upload intelligence add ki gayi: ek hi upload me multiple files process hoti hain, upload batch banta hai, exam/year/bucket distribution summarize hota hai, aur app ko samajh aata hai ki in documents ko backend me kaise organize karna hai

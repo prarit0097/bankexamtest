@@ -1,9 +1,10 @@
 from pathlib import Path
+from collections import Counter
 
 import requests
 from pypdf import PdfReader
 
-from prep.models import ContentAsset, ContentAssetType, CorpusChunk, Exam, IngestionLog, IngestionStatus
+from prep.models import ContentAsset, ContentAssetType, CorpusChunk, Exam, IngestionLog, IngestionStatus, UploadBatch
 from prep.services.ai_client import embed_texts, generate_json
 from prep.services.taxonomy import MAJOR_BANKING_TAXONOMY
 
@@ -90,19 +91,61 @@ def _split_text(text: str, chunk_size: int = 900, overlap: int = 120):
     return [chunk for chunk in chunks if chunk]
 
 
-def build_content_asset_from_upload(*, upload_category: str, uploaded_file, title: str = ""):
+def build_content_assets_from_uploads(*, upload_category: str, uploaded_files, title: str = ""):
+    uploaded_files = list(uploaded_files)
+    batch = UploadBatch.objects.create(
+        category=upload_category,
+        label=_build_batch_label(upload_category, uploaded_files, title),
+        total_files=len(uploaded_files),
+        processed_files=0,
+        status=IngestionStatus.PROCESSING if uploaded_files else IngestionStatus.PENDING,
+        summary={},
+    )
+
+    created_assets = []
+    for index, uploaded_file in enumerate(uploaded_files, start=1):
+        asset = _create_asset_for_upload(
+            upload_category=upload_category,
+            uploaded_file=uploaded_file,
+            title=title if len(uploaded_files) == 1 else "",
+            upload_batch=batch,
+            index=index,
+        )
+        ingest_asset(asset)
+        asset.refresh_from_db()
+        created_assets.append(asset)
+
+    batch.processed_files = len(created_assets)
+    batch.status = IngestionStatus.COMPLETE if created_assets else IngestionStatus.PENDING
+    batch.summary = summarize_upload_batch(batch, created_assets)
+    batch.save(update_fields=["processed_files", "status", "summary", "updated_at"])
+
+    return {"batch": batch, "assets": created_assets}
+
+
+def _create_asset_for_upload(*, upload_category: str, uploaded_file, title: str = "", upload_batch=None, index: int = 1):
     asset_type = _resolve_asset_type(upload_category, uploaded_file.name)
     asset = ContentAsset.objects.create(
         title=title.strip() or Path(uploaded_file.name).stem.replace("_", " ").replace("-", " ").title(),
         asset_type=asset_type,
+        upload_batch=upload_batch,
         uploaded_file=uploaded_file,
         is_public_licensed=True,
         ingestion_status=IngestionStatus.PENDING,
-        metadata={"upload_category": upload_category},
+        metadata={"upload_category": upload_category, "batch_index": index},
     )
-    ingest_asset(asset)
-    asset.refresh_from_db()
     return asset
+
+
+def _build_batch_label(upload_category: str, uploaded_files, title: str = ""):
+    category_label = {
+        "previous_year_paper": "Previous Year Papers",
+        "test_paper": "Test Papers",
+        "study_material": "Study Materials",
+    }.get(upload_category, "Upload Batch")
+    if title.strip():
+        return title.strip()
+    return f"{category_label} Batch ({len(uploaded_files)} files)"
 
 
 def infer_asset_metadata(asset: ContentAsset, text: str):
@@ -114,6 +157,7 @@ def infer_asset_metadata(asset: ContentAsset, text: str):
         "document_year": _infer_year(content),
         "matched_topics": _infer_topics(content_lower),
         "recommended_usage": _recommended_usage(asset.metadata.get("upload_category", "upload")),
+        "recommended_bucket": _recommended_bucket(asset.metadata.get("upload_category", "upload")),
         "resolved_title": asset.title or Path(asset.uploaded_file.name).stem.replace("_", " ").replace("-", " ").title(),
     }
 
@@ -127,6 +171,32 @@ def infer_asset_metadata(asset: ContentAsset, text: str):
         metadata.update({key: value for key, value in ai_metadata.items() if value})
 
     return metadata
+
+
+def summarize_upload_batch(batch: UploadBatch, assets):
+    exam_counter = Counter()
+    year_counter = Counter()
+    bucket_counter = Counter()
+    usage_list = []
+
+    for asset in assets:
+        exam_name = asset.metadata.get("inferred_exam_name") or "Unknown exam"
+        exam_counter[exam_name] += 1
+        year = asset.metadata.get("document_year") or "Unknown year"
+        year_counter[year] += 1
+        bucket = asset.metadata.get("recommended_bucket") or "general-support"
+        bucket_counter[bucket] += 1
+        usage = asset.metadata.get("recommended_usage")
+        if usage and usage not in usage_list:
+            usage_list.append(usage)
+
+    return {
+        "exam_distribution": dict(exam_counter),
+        "year_distribution": dict(year_counter),
+        "bucket_distribution": dict(bucket_counter),
+        "usage_guidance": usage_list[:3],
+        "arrangement_notes": _batch_arrangement_notes(batch.category, bucket_counter, exam_counter, year_counter),
+    }
 
 
 def _resolve_asset_type(upload_category: str, filename: str):
@@ -184,6 +254,31 @@ def _recommended_usage(upload_category: str):
     if upload_category == "study_material":
         return "Use for RAG explanations, topic revision support, and study references."
     return "Use as a general supporting content asset."
+
+
+def _recommended_bucket(upload_category: str):
+    if upload_category == "previous_year_paper":
+        return "historical-paper-bank"
+    if upload_category == "test_paper":
+        return "mock-and-practice-bank"
+    if upload_category == "study_material":
+        return "study-reference-bank"
+    return "general-support"
+
+
+def _batch_arrangement_notes(upload_category: str, bucket_counter, exam_counter, year_counter):
+    category_name = {
+        "previous_year_paper": "previous year papers",
+        "test_paper": "test papers",
+        "study_material": "study materials",
+    }.get(upload_category, "documents")
+    top_exam = exam_counter.most_common(1)[0][0] if exam_counter else "mixed exams"
+    top_year = year_counter.most_common(1)[0][0] if year_counter else "mixed years"
+    top_bucket = bucket_counter.most_common(1)[0][0] if bucket_counter else "general-support"
+    return (
+        f"Arrange these {category_name} under {top_bucket}, prioritize {top_exam}, "
+        f"and use {top_year} as the primary year grouping where available."
+    )
 
 
 def _infer_via_ai(asset: ContentAsset, text: str):
