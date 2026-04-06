@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ prediction.weight_snapshot.predicted_paper_title|default:prediction.title }}{% endblock %}
+
+{% block content %}
+<section class="profile-shell">
+    <div class="panel profile-banner">
+        <div class="profile-grid">
+            <div>
+                <span class="pill">Future Predicted Paper</span>
+                <div class="kicker">Exam Forecast Draft</div>
+                <h1>{{ prediction.weight_snapshot.predicted_paper_title|default:prediction.title }}</h1>
+                <p class="muted">
+                    {{ prediction.exam.name }} | {{ prediction.generated_for }}
+                    {% if prediction.section %} | {{ prediction.section.name }}{% endif %}
+                    {% if prediction.topic %} | {{ prediction.topic.name }}{% endif %}
+                </p>
+                <p>{{ prediction.description }}</p>
+                {% if prediction.weight_snapshot.predicted_pattern %}
+                    <div class="question" style="margin-top: 16px;">
+                        <h3>Likely Pattern</h3>
+                        <p>{{ prediction.weight_snapshot.predicted_pattern }}</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="mini-card">
+                <div class="kicker">Focus Areas</div>
+                <h2>Prediction Summary</h2>
+                {% if prediction.weight_snapshot.predicted_focus_areas %}
+                    {% for item in prediction.weight_snapshot.predicted_focus_areas %}
+                        <div class="pill">{{ item }}</div>
+                    {% endfor %}
+                {% else %}
+                    <p class="muted">No focus areas recorded.</p>
+                {% endif %}
+                <div class="toolbar" style="margin-top: 18px;">
+                    <a class="button secondary" href="{% url 'prep:predicted-papers' %}">Back to predicted papers</a>
+                    <a class="button" href="{% url 'prep:home' %}#start-test">Start a test</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="section-title-row">
+        <h2>Predicted Paper Questions</h2>
+        <span class="pill">{{ prediction_items|length }} questions</span>
+    </div>
+    {% if prediction_items %}
+        {% for item in prediction_items %}
+            <div class="question">
+                <h3>Q{{ forloop.counter }}. {{ item.question.stem }}</h3>
+                <p class="muted">
+                    Prediction score: {{ item.score|floatformat:2 }}
+                    {% if item.question.section %} | {{ item.question.section.name }}{% endif %}
+                    {% if item.question.topic %} | {{ item.question.topic.name }}{% endif %}
+                    | {{ item.question.get_difficulty_display }}
+                </p>
+                {% for option in item.question.options.all %}
+                    <p>
+                        <strong>{% if option.is_correct %}Correct{% else %}Option{% endif %}:</strong>
+                        {{ option.text }}
+                    </p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="muted">No predicted questions available in this paper yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

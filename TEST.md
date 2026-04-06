@@ -571,3 +571,4 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Admin panel me 3 structured upload flows add kiye gaye: previous year papers, test papers, aur study materials; upload ke baad app auto-scan karke exam, year, aur recommended usage infer karta hai
 - Bulk upload intelligence add ki gayi: ek hi upload me multiple files process hoti hain, upload batch banta hai, exam/year/bucket distribution summarize hota hai, aur app ko samajh aata hai ki in documents ko backend me kaise organize karna hai
 - Prediction flow ko OpenAI-assisted banaya gaya: prediction set generation ab likely paper title, summary, likely pattern, aur focus areas AI ke through enrich kar sakti hai; fallback logic bhi present hai
+- Predicted Papers page me cards clickable banaye gaye; click karne par full predicted paper detail khulta hai jahan sare predicted questions list hote hain

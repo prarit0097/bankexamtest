@@ -36,7 +36,7 @@
 <section class="grid">
     {% if prediction_sets %}
         {% for prediction in prediction_sets %}
-            <div class="panel">
+            <a class="panel link-arrow" href="{% url 'prep:predicted-paper-detail' prediction.pk %}" style="display:block;">
                 <div class="section-title-row">
                     <h2>{{ prediction.weight_snapshot.predicted_paper_title|default:prediction.title }}</h2>
                     <span class="pill">{{ prediction.exam.name }}</span>
@@ -57,7 +57,7 @@
                         <div class="pill">{{ item }}</div>
                     {% endfor %}
                 {% endif %}
-            </div>
+            </a>
         {% endfor %}
     {% else %}
         <div class="panel">

@@ -17,6 +17,7 @@ from prep.models import (
     ExplanationMode,
     Question,
     QuestionSourceType,
+    PredictionSet,
     TelegramLink,
     TestSession,
     TestStatus,
@@ -77,6 +78,16 @@ class PrepPlatformTests(TestCase):
         self.assertContains(response, "Predicted Papers")
         self.assertContains(response, "Future Paper Intelligence")
         self.assertContains(response, "Likely Pattern")
+
+    def test_predicted_paper_detail_opens_full_question_list(self):
+        self.client.post(reverse("prep:admin-panel"), {"action": "generate_predictions"})
+        prediction = PredictionSet.objects.order_by("-id").first()
+
+        response = self.client.get(reverse("prep:predicted-paper-detail", kwargs={"pk": prediction.pk}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Predicted Paper Questions")
+        self.assertContains(response, "Likely Pattern")
+        self.assertContains(response, "Prediction score")
 
     def test_admin_panel_loads(self):
         response = self.client.get(reverse("prep:admin-panel"))

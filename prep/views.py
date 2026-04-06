@@ -65,6 +65,23 @@ class PredictedPapersView(TemplateView):
         return context
 
 
+class PredictedPaperDetailView(DetailView):
+    model = PredictionSet
+    template_name = "prep/predicted_paper_detail.html"
+    context_object_name = "prediction"
+
+    def get_queryset(self):
+        return PredictionSet.objects.select_related("exam", "section", "topic").prefetch_related(
+            "items__question__options"
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        prediction_items = self.object.items.select_related("question", "question__section", "question__topic").order_by("-score", "id")
+        context["prediction_items"] = prediction_items
+        return context
+
+
 class AdminPanelView(TemplateView):
     template_name = "prep/admin_panel.html"
     http_method_names = ["get", "post"]
