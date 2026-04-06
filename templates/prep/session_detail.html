@@ -12,9 +12,6 @@
         {{ session.get_difficulty_display }} difficulty
         {% if session.metadata.use_prediction %}| likely-question practice set{% endif %}
     </p>
-    {% if session.telegram_link %}
-        <p class="muted">Telegram linked: {{ session.telegram_link }}</p>
-    {% endif %}
 </div>
 
 <form method="post" action="{% url 'prep:submit-test' session.pk %}">

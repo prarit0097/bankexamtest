@@ -11,29 +11,35 @@
 <section class="hero">
     <div class="panel">
         <span class="pill">Student Profile</span>
-        {% if profile.telegram_username %}
-            <span class="pill">{{ profile.telegram_username }}</span>
-        {% endif %}
         <h1>{{ profile.profile_name }}</h1>
-        {% if profile.chat_id %}
-            <p class="muted">Telegram chat ID: {{ profile.chat_id }}</p>
+        {% if profile.profile_created_at %}
+            <p class="muted">Profile created on {{ profile.profile_created_at|date:"d M Y, h:i A" }}</p>
         {% endif %}
-        {% if profile.linked_at %}
-            <p class="muted">Profile linked on {{ profile.linked_at|date:"d M Y, h:i A" }}</p>
-        {% endif %}
-        {% if profile.last_report_sent_at %}
-            <p class="muted">Last Telegram report sent on {{ profile.last_report_sent_at|date:"d M Y, h:i A" }}</p>
+        {% if profile.last_active_at %}
+            <p class="muted">Last active on {{ profile.last_active_at|date:"d M Y, h:i A" }}</p>
         {% endif %}
         {% if not profile.has_test_data %}
             <p>No completed test history yet. Start a test and this page will begin showing your performance trends, goals, strengths, and weak areas.</p>
         {% endif %}
+        <form method="post" action="{% url 'prep:profile' %}" style="margin-top: 20px;">
+            {% csrf_token %}
+            <div class="field">
+                <label for="{{ name_form.display_name.id_for_label }}">{{ name_form.display_name.label }}</label>
+                {{ name_form.display_name }}
+                {% if name_form.display_name.help_text %}
+                    <small class="muted">{{ name_form.display_name.help_text }}</small>
+                {% endif %}
+                {% for error in name_form.display_name.errors %}
+                    <div class="muted">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <button type="submit">Save student name</button>
+        </form>
     </div>
     <div class="panel">
         <h2>Overview</h2>
         <p class="muted">This page combines your test history, performance trends, repeated weak areas, and next-step goals.</p>
-        {% if default_telegram_chat_id %}
-            <p class="muted">Backend-controlled profile is currently tied to chat ID {{ default_telegram_chat_id }}.</p>
-        {% endif %}
+        <p class="muted">Use this page to review your growth, spot weak sections, and decide what to practice next.</p>
     </div>
 </section>
 

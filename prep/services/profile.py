@@ -55,11 +55,9 @@ def build_profile_dashboard(chat_id=None):
     opportunities = _build_opportunities(weak_counter, overall_accuracy, total_incorrect)
 
     return {
-        "chat_id": target_chat_id,
-        "profile_name": _display_name(link, target_chat_id),
-        "telegram_username": link.username if link else "",
-        "linked_at": link.linked_at if link else None,
-        "last_report_sent_at": link.last_report_sent_at if link else None,
+        "profile_name": _display_name(link),
+        "profile_created_at": link.linked_at if link else None,
+        "last_active_at": _last_active_at(sessions),
         "has_profile": bool(target_chat_id),
         "has_test_data": total_started > 0,
         "total_started": total_started,
@@ -87,6 +85,17 @@ def build_profile_dashboard(chat_id=None):
     }
 
 
+def save_profile_name(display_name, chat_id=None):
+    target_chat_id = (chat_id or settings.DEFAULT_TELEGRAM_CHAT_ID or "").strip()
+    if not target_chat_id:
+        return None
+
+    link, _ = TelegramLink.objects.get_or_create(chat_id=target_chat_id)
+    link.display_name = display_name.strip()
+    link.save(update_fields=["display_name", "updated_at"])
+    return link
+
+
 def _safe_percentage(numerator, denominator):
     if not denominator:
         return 0.0
@@ -107,14 +116,19 @@ def _top_counter_items(counter, limit=5):
     return [{"label": label, "count": count} for label, count in counter.most_common(limit)]
 
 
-def _display_name(link, chat_id):
+def _display_name(link):
     if not link:
-        return "Profile"
+        return "Student"
     if link.display_name:
         return link.display_name
-    if link.username:
-        return f"@{link.username}"
-    return f"Chat {chat_id}"
+    return "Student"
+
+
+def _last_active_at(sessions):
+    latest = sessions.first()
+    if not latest:
+        return None
+    return latest.submitted_at or latest.started_at
 
 
 def _compute_streaks(completed_sessions):

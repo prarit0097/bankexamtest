@@ -1,13 +1,18 @@
 from django.contrib import messages
-from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import DetailView, FormView, TemplateView
 
-from prep.forms import TestCreationForm
+from prep.forms import StudentNameForm, TestCreationForm
 from prep.models import ContentAsset, PredictionSet, Section, TestSession, TestStatus, Topic
-from prep.services import build_profile_dashboard, create_test_session, ensure_default_taxonomy, submit_test_session
+from prep.services import (
+    build_profile_dashboard,
+    create_test_session,
+    ensure_default_taxonomy,
+    save_profile_name,
+    submit_test_session,
+)
 
 
 class HomeView(TemplateView):
@@ -19,7 +24,6 @@ class HomeView(TemplateView):
         context["form"] = kwargs.get("form") or TestCreationForm()
         context["prediction_sets"] = PredictionSet.objects.select_related("exam")[:5]
         context["content_assets"] = ContentAsset.objects.select_related("exam")[:5]
-        context["default_telegram_chat_id"] = settings.DEFAULT_TELEGRAM_CHAT_ID
         context["section_catalog"] = [
             {"id": section.id, "label": str(section), "exam_id": section.exam_id}
             for section in Section.objects.select_related("exam").order_by("exam__name", "display_order", "name")
@@ -38,13 +42,26 @@ class HomeView(TemplateView):
 
 class ProfileView(TemplateView):
     template_name = "prep/profile.html"
+    http_method_names = ["get", "post"]
 
     def get_context_data(self, **kwargs):
         ensure_default_taxonomy()
         context = super().get_context_data(**kwargs)
-        context["profile"] = build_profile_dashboard()
-        context["default_telegram_chat_id"] = settings.DEFAULT_TELEGRAM_CHAT_ID
+        profile = build_profile_dashboard()
+        initial_name = "" if profile["profile_name"] == "Student" else profile["profile_name"]
+        context["profile"] = profile
+        context["name_form"] = kwargs.get("name_form") or StudentNameForm(initial={"display_name": initial_name})
         return context
+
+    def post(self, request, *args, **kwargs):
+        form = StudentNameForm(request.POST)
+        if form.is_valid():
+            save_profile_name(form.cleaned_data["display_name"])
+            messages.success(request, "Student name updated successfully.")
+            return redirect("prep:profile")
+
+        messages.error(request, "Student name could not be updated. Please correct the field and try again.")
+        return self.render_to_response(self.get_context_data(name_form=form))
 
 
 class StartTestView(FormView):

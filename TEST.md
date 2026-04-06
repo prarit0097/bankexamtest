@@ -131,6 +131,7 @@ Agar student ka Telegram linked hai, to last day ka report Telegram par bheja ja
 Ab app me ek profile dashboard bhi hai.
 Is page par student ka overall data dikh sakta hai:
 
+- student name edit option
 - total started tests
 - total completed tests
 - overall accuracy
@@ -142,6 +143,9 @@ Is page par student ka overall data dikh sakta hai:
 - opportunities
 - goals
 - streaks
+
+Important:
+Student-facing pages par ab Telegram ki details show nahi ki jaati. Profile page par student apna visible name khud change kar sakta hai.
 
 ---
 
@@ -544,3 +548,4 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Test creation form me section/topic filtering aur clearer invalid-selection feedback add ki gayi, taaki `Generate test session` click par silent failure na lage
 - Result page me navigation add ki gayi: dashboard par wapas jaane aur similar test dobara start karne ke options
 - Student profile dashboard add kiya gaya jisme performance summary, weak areas, strengths, opportunities, goals, recent tests aur in-progress tests dikhte hain
+- Student name change option add kiya gaya aur visible pages se Telegram-related text hata diya gaya

@@ -77,3 +77,12 @@ class TestCreationForm(forms.Form):
             return self.data.get("section") or None
         initial_section = self.initial.get("section")
         return getattr(initial_section, "id", initial_section)
+
+
+class StudentNameForm(forms.Form):
+    display_name = forms.CharField(
+        max_length=120,
+        min_length=2,
+        label="Student name",
+        help_text="Choose the name you want to see on your profile page.",
+    )
