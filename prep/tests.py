@@ -26,7 +26,12 @@ from prep.services.rag import get_best_explanation
 from prep.services.taxonomy import ensure_default_taxonomy
 
 
-@override_settings(CELERY_TASK_ALWAYS_EAGER=True, OPENAI_API_KEY="", TELEGRAM_BOT_TOKEN="")
+@override_settings(
+    CELERY_TASK_ALWAYS_EAGER=True,
+    OPENAI_API_KEY="",
+    TELEGRAM_BOT_TOKEN="",
+    DEFAULT_TELEGRAM_CHAT_ID="712615667",
+)
 class PrepPlatformTests(TestCase):
     def setUp(self):
         ensure_default_taxonomy()
@@ -60,6 +65,19 @@ class PrepPlatformTests(TestCase):
                 source_type=QuestionSourceType.GENERATED,
             ).exists()
         )
+
+    def test_create_test_session_uses_backend_default_telegram_chat_id(self):
+        session = create_test_session(
+            exam=self.exam,
+            mode="mock",
+            section=self.section,
+            topic=self.topic,
+            difficulty="medium",
+            question_count=5,
+            duration_minutes=20,
+        )
+        self.assertIsNotNone(session.telegram_link)
+        self.assertEqual(session.telegram_link.chat_id, "712615667")
 
     def test_submit_session_uses_manual_explanation_when_available(self):
         session = create_test_session(
@@ -168,11 +186,11 @@ class PrepPlatformTests(TestCase):
                 "question_count": 5,
                 "duration_minutes": 10,
                 "use_prediction": "on",
-                "telegram_chat_id": "3003",
             },
         )
         self.assertEqual(response.status_code, 302)
         session = TestSession.objects.order_by("-id").first()
+        self.assertEqual(session.telegram_link.chat_id, "712615667")
         detail = self.client.get(reverse("prep:session-detail", kwargs={"pk": session.pk}))
         self.assertEqual(detail.status_code, 200)
 

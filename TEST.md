@@ -363,6 +363,15 @@ AI-generated questions, explanations, aur embeddings ke liye.
 ### Telegram Bot API
 Daily reports bhejne ke liye.
 
+### Backend Telegram Chat Control
+Ab Telegram chat ID frontend form se nahi li jaati.
+Ye backend se control hoti hai using:
+
+- `DEFAULT_TELEGRAM_CHAT_ID`
+
+Current dev backend chat ID:
+- `712615667`
+
 ### PyPDF
 PDF text read karne ke liye.
 
@@ -448,6 +457,7 @@ Main values:
 - `OPENAI_MODEL` = kaunsa model use hoga
 - `OPENAI_EMBEDDING_MODEL` = embeddings model
 - `TELEGRAM_BOT_TOKEN` = Telegram bot access
+- `DEFAULT_TELEGRAM_CHAT_ID` = backend se fixed Telegram chat routing
 
 Important:
 Real secrets ko public file me nahi rakhna chahiye.
@@ -514,3 +524,4 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Telegram send flow ko strict banaya gaya taaki Telegram API `ok=false` responses ko success mark na kiya jaye
 - Automated tests ko isolate kiya gaya taaki test suite real OpenAI aur Telegram network calls par depend na kare
 - `.venv/` ko `.gitignore` me add kiya gaya taaki local virtual environment remote me push na ho
+- Telegram chat ID ko backend-controlled banaya gaya aur frontend form se hata diya gaya

@@ -16,6 +16,9 @@
     <div class="panel">
         <h2>What this build includes</h2>
         <p class="muted">Student-selectable mock/topic tests, automated scoring, explanations, prediction sets, content ingestion, and Telegram summaries.</p>
+        {% if default_telegram_chat_id %}
+            <p class="muted">Telegram reports are routed by backend configuration to chat ID {{ default_telegram_chat_id }}.</p>
+        {% endif %}
     </div>
 </section>
 

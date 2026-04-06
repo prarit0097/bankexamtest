@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -18,6 +19,7 @@ class HomeView(TemplateView):
         context["form"] = kwargs.get("form") or TestCreationForm()
         context["prediction_sets"] = PredictionSet.objects.select_related("exam")[:5]
         context["content_assets"] = ContentAsset.objects.select_related("exam")[:5]
+        context["default_telegram_chat_id"] = settings.DEFAULT_TELEGRAM_CHAT_ID
         return context
 
 
@@ -36,7 +38,6 @@ class StartTestView(FormView):
             question_count=form.cleaned_data["question_count"],
             duration_minutes=form.cleaned_data["duration_minutes"],
             use_prediction=form.cleaned_data["use_prediction"],
-            telegram_chat_id=form.cleaned_data["telegram_chat_id"],
         )
         messages.success(self.request, "Test session created.")
         return redirect("prep:session-detail", pk=session.pk)

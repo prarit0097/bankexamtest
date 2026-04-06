@@ -38,8 +38,9 @@ def create_test_session(
     duration_minutes = duration_minutes or settings.DEFAULT_TEST_DURATION_MINUTES
 
     telegram_link = None
-    if telegram_chat_id:
-        telegram_link, _ = TelegramLink.objects.get_or_create(chat_id=telegram_chat_id.strip())
+    effective_chat_id = telegram_chat_id.strip() if telegram_chat_id else settings.DEFAULT_TELEGRAM_CHAT_ID
+    if effective_chat_id:
+        telegram_link, _ = TelegramLink.objects.get_or_create(chat_id=effective_chat_id)
 
     queryset = Question.objects.filter(exam=exam, is_approved=True, difficulty=difficulty)
     if section:
@@ -91,7 +92,7 @@ def create_test_session(
         duration_minutes=duration_minutes,
         total_questions=len(selected_questions),
         max_score=Decimal(str(len(selected_questions))),
-        metadata={"use_prediction": use_prediction},
+        metadata={"use_prediction": use_prediction, "telegram_chat_id": effective_chat_id},
     )
     TestSessionQuestion.objects.bulk_create(
         [

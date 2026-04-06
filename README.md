@@ -16,6 +16,7 @@ Python/Django web app for 2026 India banking-exam preparation. The app supports:
 - PostgreSQL in production, SQLite fallback for local development
 - Celery + Redis for ingestion, prediction, and Telegram jobs
 - OpenAI API for question generation, explanations, and embeddings
+- Backend-configured Telegram chat routing via `DEFAULT_TELEGRAM_CHAT_ID`
 
 ## Quick start
 
@@ -34,6 +35,7 @@ python manage.py runserver
 3. Submission calculates score, weak areas, and explanation payloads.
 4. Admin can upload assets and queue ingestion from Django admin.
 5. Telegram reports are sent with `prep.tasks.send_daily_telegram_reports`.
+6. Student form no longer asks for Telegram chat ID; backend default chat routing is controlled through `.env`.
 
 ## Notes
 

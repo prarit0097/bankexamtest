@@ -13,7 +13,6 @@ class TestCreationForm(forms.Form):
     question_count = forms.IntegerField(min_value=5, max_value=50, initial=10)
     duration_minutes = forms.IntegerField(min_value=5, max_value=180, initial=15)
     use_prediction = forms.BooleanField(required=False)
-    telegram_chat_id = forms.CharField(required=False, max_length=128)
 
     def __init__(self, *args, **kwargs):
         ensure_default_taxonomy()
