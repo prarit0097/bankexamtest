@@ -60,7 +60,7 @@
         <p class="muted">Current files in this section: {{ admin_panel.upload_category_counts.previous_year_paper }}</p>
         <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data" data-upload-form>
             {% csrf_token %}
-            <input type="hidden" name="action" value="upload_previous_year_paper">
+            <input type="hidden" name="upload_action" value="upload_previous_year_paper">
             {% for field in previous_year_form %}
                 <div class="field">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -102,7 +102,7 @@
         <p class="muted">Current files in this section: {{ admin_panel.upload_category_counts.test_paper }}</p>
         <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data" data-upload-form>
             {% csrf_token %}
-            <input type="hidden" name="action" value="upload_test_paper">
+            <input type="hidden" name="upload_action" value="upload_test_paper">
             {% for field in test_paper_form %}
                 <div class="field">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -144,7 +144,7 @@
         <p class="muted">Current files in this section: {{ admin_panel.upload_category_counts.study_material }}</p>
         <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data" data-upload-form>
             {% csrf_token %}
-            <input type="hidden" name="action" value="upload_study_material">
+            <input type="hidden" name="upload_action" value="upload_study_material">
             {% for field in study_material_form %}
                 <div class="field">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>

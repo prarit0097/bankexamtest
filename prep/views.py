@@ -109,13 +109,14 @@ class AdminPanelView(TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        action = request.POST.get("action", "").strip()
-        if action in {"upload_previous_year_paper", "upload_test_paper", "upload_study_material"}:
-            return self._handle_upload(request, action)
-        if action in {"reset_previous_year_paper", "reset_test_paper", "reset_study_material"}:
-            return self._handle_reset(action)
+        reset_action = request.POST.get("action", "").strip()
+        upload_action = request.POST.get("upload_action", "").strip()
+        if upload_action in {"upload_previous_year_paper", "upload_test_paper", "upload_study_material"}:
+            return self._handle_upload(request, upload_action)
+        if reset_action in {"reset_previous_year_paper", "reset_test_paper", "reset_study_material"}:
+            return self._handle_reset(reset_action)
         try:
-            message = run_admin_action(action)
+            message = run_admin_action(reset_action)
         except ValueError:
             messages.error(request, "Unknown admin action.")
         else:

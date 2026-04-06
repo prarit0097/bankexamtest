@@ -99,6 +99,7 @@ class PrepPlatformTests(TestCase):
         self.assertContains(response, "data-upload-form")
         self.assertContains(response, 'form.getAttribute("action")')
         self.assertContains(response, 'submitter.value.startsWith("reset_")')
+        self.assertContains(response, 'name="upload_action"')
         self.assertContains(response, reverse("prep:admin-content-assets"))
         self.assertContains(response, reverse("prep:admin-question-bank"))
         self.assertContains(response, reverse("prep:admin-predictions"))
@@ -130,7 +131,7 @@ class PrepPlatformTests(TestCase):
         response = self.client.post(
             reverse("prep:admin-panel"),
             {
-                "action": "upload_previous_year_paper",
+                "upload_action": "upload_previous_year_paper",
                 "title": "IBPS PO 2023 Paper",
                 "uploaded_files": [upload_one, upload_two],
             },
@@ -158,7 +159,7 @@ class PrepPlatformTests(TestCase):
         response = self.client.post(
             reverse("prep:admin-panel"),
             {
-                "action": "upload_test_paper",
+                "upload_action": "upload_test_paper",
                 "title": "SBI Clerk Mock 2024",
                 "uploaded_files": [upload],
             },
@@ -182,11 +183,11 @@ class PrepPlatformTests(TestCase):
         )
         self.client.post(
             reverse("prep:admin-panel"),
-            {"action": "upload_previous_year_paper", "title": "Prev Batch", "uploaded_files": [previous_upload]},
+            {"upload_action": "upload_previous_year_paper", "title": "Prev Batch", "uploaded_files": [previous_upload]},
         )
         self.client.post(
             reverse("prep:admin-panel"),
-            {"action": "upload_test_paper", "title": "Test Batch", "uploaded_files": [test_upload]},
+            {"upload_action": "upload_test_paper", "title": "Test Batch", "uploaded_files": [test_upload]},
         )
 
         response = self.client.post(reverse("prep:admin-panel"), {"action": "reset_test_paper"})
@@ -221,7 +222,7 @@ class PrepPlatformTests(TestCase):
         response = self.client.post(
             reverse("prep:admin-panel"),
             {
-                "action": "upload_study_material",
+                "upload_action": "upload_study_material",
                 "title": "RBI Assistant Guide",
                 "uploaded_files": [upload],
             },
