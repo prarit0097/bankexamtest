@@ -37,6 +37,63 @@
             margin: 0 auto;
             padding: 32px 20px 64px;
         }
+        .site-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 22px;
+            padding: 16px 18px;
+            border-radius: 26px;
+            background: rgba(255, 250, 241, 0.88);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(12px);
+        }
+        .site-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .site-brand strong {
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: 2rem;
+            line-height: .9;
+        }
+        .site-brand span {
+            color: var(--muted);
+            font-size: 13px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+        .nav-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 16px;
+            border-radius: 999px;
+            color: var(--accent-deep);
+            text-decoration: none;
+            font-weight: 800;
+            background: rgba(13,108,96,.08);
+            border: 1px solid transparent;
+            transition: transform .2s ease, background .2s ease, border-color .2s ease;
+        }
+        .nav-link:hover {
+            transform: translateY(-1px);
+            background: rgba(13,108,96,.13);
+        }
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+            color: white;
+            box-shadow: 0 10px 24px rgba(13,108,96,.22);
+        }
         .hero {
             display: grid;
             gap: 20px;
@@ -253,6 +310,17 @@
             text-decoration: none;
         }
         @media (max-width: 760px) {
+            .site-nav {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .nav-links {
+                width: 100%;
+            }
+            .nav-link {
+                justify-content: center;
+                flex: 1 1 160px;
+            }
             .hero { grid-template-columns: 1fr; }
             .profile-grid { grid-template-columns: 1fr; }
             .profile-name-row { align-items: flex-start; }
@@ -261,6 +329,23 @@
 </head>
 <body>
     <div class="page">
+        <nav class="site-nav">
+            <div class="site-brand">
+                <span>Bank Exam Prep</span>
+                <strong>Jeena Sikho</strong>
+            </div>
+            <div class="nav-links">
+                <a class="nav-link{% if request.resolver_match.url_name == 'home' %} active{% endif %}" href="{% url 'prep:home' %}">
+                    Dashboard
+                </a>
+                <a class="nav-link" href="{% url 'prep:home' %}#start-test">
+                    Start New Test
+                </a>
+                <a class="nav-link{% if request.resolver_match.url_name == 'profile' %} active{% endif %}" href="{% url 'prep:profile' %}">
+                    Profile
+                </a>
+            </div>
+        </nav>
         {% if messages %}
             <ul class="messages">
                 {% for message in messages %}

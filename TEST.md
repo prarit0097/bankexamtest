@@ -550,4 +550,5 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Student profile dashboard add kiya gaya jisme performance summary, weak areas, strengths, opportunities, goals, recent tests aur in-progress tests dikhte hain
 - Student name change option add kiya gaya aur visible pages se Telegram-related text hata diya gaya
 - Profile page ko visually refine kiya gaya with stronger dashboard styling and `Edit name` interaction after save
+- Shared top navigation bar add ki gayi jisme dashboard, start new test, aur profile links har main page par visible hain
 - `OPENAI_MODEL` ko `gpt-4o-mini` par update kiya gaya

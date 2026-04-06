@@ -44,6 +44,9 @@ class PrepPlatformTests(TestCase):
     def test_home_page_loads(self):
         response = self.client.get(reverse("prep:home"))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dashboard")
+        self.assertContains(response, "Start New Test")
+        self.assertContains(response, "Profile")
         self.assertContains(response, "Start a Test")
         self.assertContains(response, "Select a section")
         self.assertContains(response, "Select a topic")
@@ -53,6 +56,9 @@ class PrepPlatformTests(TestCase):
     def test_profile_page_loads_empty_state(self):
         response = self.client.get(reverse("prep:profile"))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dashboard")
+        self.assertContains(response, "Start New Test")
+        self.assertContains(response, "Profile")
         self.assertContains(response, "Student Profile")
         self.assertContains(response, "No completed test history yet.")
         self.assertContains(response, "Edit name")
@@ -273,6 +279,9 @@ class PrepPlatformTests(TestCase):
         self.assertEqual(session.telegram_link.chat_id, "712615667")
         detail = self.client.get(reverse("prep:session-detail", kwargs={"pk": session.pk}))
         self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, "Dashboard")
+        self.assertContains(detail, "Start New Test")
+        self.assertContains(detail, "Profile")
         self.assertNotContains(detail, "Telegram")
 
         answers = {}
@@ -282,6 +291,9 @@ class PrepPlatformTests(TestCase):
         self.assertEqual(submit.status_code, 302)
         result = self.client.get(reverse("prep:result", kwargs={"pk": session.pk}))
         self.assertEqual(result.status_code, 200)
+        self.assertContains(result, "Dashboard")
+        self.assertContains(result, "Start New Test")
+        self.assertContains(result, "Profile")
         self.assertContains(result, "Result Summary")
         self.assertContains(result, "Back to dashboard")
         self.assertContains(result, "Start similar test again")

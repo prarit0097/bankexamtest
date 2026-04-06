@@ -4,11 +4,13 @@
 
 {% block content %}
 <div class="panel" style="margin-bottom: 20px;">
-    <a class="button" href="{% url 'prep:home' %}">Back to dashboard</a>
-    <a class="button" href="{% url 'prep:profile' %}" style="margin-left: 10px;">View profile</a>
+    <div class="toolbar">
+    <a class="button secondary" href="{% url 'prep:home' %}">Back to dashboard</a>
+    <a class="button secondary" href="{% url 'prep:profile' %}">View profile</a>
     <a class="button" href="{% url 'prep:start-test' %}"
        onclick="event.preventDefault(); document.getElementById('retry-test-form').submit();"
-       style="margin-left: 10px;">Start similar test again</a>
+       >Start similar test again</a>
+    </div>
     <form id="retry-test-form" method="post" action="{% url 'prep:start-test' %}" style="display: none;">
         {% csrf_token %}
         <input type="hidden" name="mode" value="{{ session.mode }}">
