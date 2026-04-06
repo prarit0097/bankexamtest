@@ -48,22 +48,28 @@
         <span class="pill">{{ prediction_items|length }} questions</span>
     </div>
     {% if prediction_items %}
-        {% for item in prediction_items %}
-            <div class="question">
-                <h3>Q{{ forloop.counter }}. {{ item.question.stem }}</h3>
-                <p class="muted">
-                    Prediction score: {{ item.score|floatformat:2 }}
-                    {% if item.question.section %} | {{ item.question.section.name }}{% endif %}
-                    {% if item.question.topic %} | {{ item.question.topic.name }}{% endif %}
-                    | {{ item.question.get_difficulty_display }}
-                </p>
-                {% for option in item.question.options.all %}
-                    <p>
-                        <strong>{% if option.is_correct %}Correct{% else %}Option{% endif %}:</strong>
-                        {{ option.text }}
-                    </p>
-                {% endfor %}
+        {% for section in paper_sections %}
+            <div class="question" style="background: rgba(13,108,96,.06);">
+                <h2 style="margin-bottom: 4px;">{{ section.name }}</h2>
+                <p class="muted">{{ section.items|length }} predicted question(s) in this section</p>
             </div>
+            {% for index, item in section.items %}
+                <div class="question">
+                    <h3>Q{{ index }}. {{ item.question.stem }}</h3>
+                    <p class="muted">
+                        Prediction score: {{ item.score|floatformat:2 }}
+                        {% if item.question.topic %} | {{ item.question.topic.name }}{% endif %}
+                        | {{ item.question.get_difficulty_display }}
+                    </p>
+                    {% for option in item.question.options.all %}
+                        <p>
+                            <strong>{{ forloop.counter|stringformat:"s" }}.</strong>
+                            {{ option.text }}
+                            {% if option.is_correct %}<span class="pill" style="margin-left: 8px;">Likely answer</span>{% endif %}
+                        </p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
         {% endfor %}
     {% else %}
         <p class="muted">No predicted questions available in this paper yet.</p>

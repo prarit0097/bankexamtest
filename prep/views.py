@@ -79,6 +79,7 @@ class PredictedPaperDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         prediction_items = self.object.items.select_related("question", "question__section", "question__topic").order_by("-score", "id")
         context["prediction_items"] = prediction_items
+        context["paper_sections"] = _group_prediction_items(prediction_items)
         return context
 
 
@@ -331,3 +332,17 @@ class TestResultView(DetailView):
             messages.info(request, "Submit the test before viewing results.")
             return HttpResponseRedirect(reverse("prep:session-detail", kwargs={"pk": session.pk}))
         return super().dispatch(request, *args, **kwargs)
+
+
+def _group_prediction_items(prediction_items):
+    grouped = []
+    seen = {}
+    for index, item in enumerate(prediction_items, start=1):
+        section_name = item.question.section.name if item.question.section else "General Paper"
+        bucket = seen.get(section_name)
+        if bucket is None:
+            bucket = {"name": section_name, "items": []}
+            seen[section_name] = bucket
+            grouped.append(bucket)
+        bucket["items"].append((index, item))
+    return grouped

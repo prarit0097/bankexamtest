@@ -91,13 +91,24 @@ def _build_prompt(exam, section, topic, difficulty, count):
 
 def _fallback_payloads(exam, section, topic, difficulty, count):
     base_label = topic.name if topic else section.name if section else exam.name
+    exam_name = exam.name
     patterns = Counter(["trend-frequency", "concept-recall", "mixed-revision"])
     payloads = []
     for index in range(count):
         correct_index = index % 4
+        if topic:
+            stem = (
+                f"For the {exam_name} {topic.name} section, which statement best matches the concept tested in practice set #{index + 1}?"
+            )
+        elif section:
+            stem = (
+                f"In {exam_name}, which option is the best fit for the {section.name} pattern highlighted in practice set #{index + 1}?"
+            )
+        else:
+            stem = f"Which option best fits the {exam_name} practice trend highlighted in set #{index + 1}?"
         payloads.append(
             {
-                "stem": f"[AI Practice] {base_label}: sample concept check #{index + 1} for {exam.code}.",
+                "stem": stem,
                 "options": [
                     f"{base_label} concept option A",
                     f"{base_label} concept option B",

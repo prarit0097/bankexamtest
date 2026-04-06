@@ -19,9 +19,15 @@ def generate_prediction_set(exam, section=None, topic=None):
     verified_queryset = queryset.filter(source_type=QuestionSourceType.VERIFIED_PAPER)
     if verified_queryset.exists():
         queryset = verified_queryset
+    else:
+        queryset = queryset.exclude(stem__startswith="[AI Practice]")
 
     if not queryset.exists():
         queryset = ensure_generated_questions(exam, section, topic, count=15)
+    elif hasattr(queryset, "exclude"):
+        filtered_queryset = queryset.exclude(stem__startswith="[AI Practice]")
+        if filtered_queryset.exists():
+            queryset = filtered_queryset
 
     topic_weights = Counter()
     question_scores = defaultdict(float)
@@ -43,7 +49,8 @@ def generate_prediction_set(exam, section=None, topic=None):
         is_active=True,
     )
 
-    for question in queryset[:25]:
+    selected_questions = list(queryset[:25])
+    for question in selected_questions:
         weight_key = question.topic_id or question.section_id or question.id
         PredictionSetQuestion.objects.create(
             prediction_set=prediction_set,
@@ -51,7 +58,7 @@ def generate_prediction_set(exam, section=None, topic=None):
             score=question_scores[question.id] + topic_weights[weight_key],
         )
 
-    ai_payload = _build_prediction_ai_payload(exam, queryset, topic_weights)
+    ai_payload = _build_prediction_ai_payload(exam, selected_questions, topic_weights)
     prediction_set.description = ai_payload["summary"]
     prediction_set.weight_snapshot = {
         **prediction_set.weight_snapshot,
@@ -63,9 +70,9 @@ def generate_prediction_set(exam, section=None, topic=None):
     return prediction_set
 
 
-def _build_prediction_ai_payload(exam, queryset, topic_weights):
+def _build_prediction_ai_payload(exam, selected_questions, topic_weights):
     topic_names = []
-    for question in queryset[:12]:
+    for question in selected_questions[:12]:
         if question.topic and question.topic.name not in topic_names:
             topic_names.append(question.topic.name)
         elif question.section and question.section.name not in topic_names:
@@ -74,8 +81,8 @@ def _build_prediction_ai_payload(exam, queryset, topic_weights):
     fallback = {
         "predicted_paper_title": f"Future predicted paper for {exam.name}",
         "summary": (
-            f"OpenAI-assisted probability view for {exam.name}. Use this set as a future predicted paper draft, "
-            "prioritizing historically repeated sections and the strongest topic signals from the current bank."
+            f"Future predicted paper draft for {exam.name}. This paper prioritizes historically repeated sections, "
+            "verified question-bank signals, and the strongest topic trends currently available."
         ),
         "predicted_pattern": "Balanced paper with heavier emphasis on recurring high-frequency sections and recent trend topics.",
         "predicted_focus_areas": topic_names[:5],
