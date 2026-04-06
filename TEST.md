@@ -451,6 +451,7 @@ Main values:
 
 Important:
 Real secrets ko public file me nahi rakhna chahiye.
+App startup par `.env` file automatically load hoti hai, isliye local dev me values alag se manually export karna zaroori nahi hai.
 
 ---
 
@@ -509,3 +510,7 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Global rule reinforce kiya gaya ki har future change se pehle `AGENTS.md` read karna mandatory hai
 - `.env.example` se real Telegram token hata kar placeholder state maintain ki gayi
 - `.omx/` local state ko remote push se bachane ke liye `.gitignore` update kiya gaya
+- App settings me `.env` auto-loading add ki gayi taaki local secrets/config actual Django runtime me use ho sake
+- Telegram send flow ko strict banaya gaya taaki Telegram API `ok=false` responses ko success mark na kiya jaye
+- Automated tests ko isolate kiya gaya taaki test suite real OpenAI aur Telegram network calls par depend na kare
+- `.venv/` ko `.gitignore` me add kiya gaya taaki local virtual environment remote me push na ho

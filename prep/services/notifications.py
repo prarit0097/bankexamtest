@@ -65,6 +65,12 @@ def send_daily_summary(telegram_link, report_date=None):
             timeout=10,
         )
         response.raise_for_status()
+        response_payload = response.json()
+        if not response_payload.get("ok"):
+            raise ValueError(response_payload.get("description", "Telegram API returned ok=false"))
+        if response_payload.get("result", {}).get("message_id"):
+            payload["telegram_message_id"] = response_payload["result"]["message_id"]
+            log.payload = payload
         log.status = DeliveryStatus.SENT
         log.error_message = ""
         telegram_link.last_report_sent_at = timezone.now()

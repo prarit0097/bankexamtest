@@ -7,3 +7,4 @@ staticfiles/
 .coverage
 .env
 .omx/
+.venv/

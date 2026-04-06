@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import Mock, patch
 
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
@@ -25,7 +26,7 @@ from prep.services.rag import get_best_explanation
 from prep.services.taxonomy import ensure_default_taxonomy
 
 
-@override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True, OPENAI_API_KEY="", TELEGRAM_BOT_TOKEN="")
 class PrepPlatformTests(TestCase):
     def setUp(self):
         ensure_default_taxonomy()
@@ -118,6 +119,7 @@ class PrepPlatformTests(TestCase):
         self.assertEqual(explanation.mode, ExplanationMode.RAG)
         self.assertTrue(CorpusChunk.objects.filter(asset=asset).exists())
 
+    @override_settings(TELEGRAM_BOT_TOKEN="")
     def test_daily_summary_generation_and_skipped_delivery_without_token(self):
         telegram_link = TelegramLink.objects.create(chat_id="2002", username="student2002")
         session = create_test_session(
@@ -140,6 +142,19 @@ class PrepPlatformTests(TestCase):
 
         delivery_log = send_daily_summary(telegram_link)
         self.assertEqual(delivery_log.status, DeliveryStatus.SKIPPED)
+
+    @override_settings(TELEGRAM_BOT_TOKEN="test-token")
+    def test_daily_summary_marks_failure_when_telegram_api_returns_not_ok(self):
+        telegram_link = TelegramLink.objects.create(chat_id="9999", username="student9999")
+        mocked_response = Mock()
+        mocked_response.raise_for_status.return_value = None
+        mocked_response.json.return_value = {"ok": False, "description": "Bad Request: chat not found"}
+
+        with patch("prep.services.notifications.requests.post", return_value=mocked_response):
+            delivery_log = send_daily_summary(telegram_link)
+
+        self.assertEqual(delivery_log.status, DeliveryStatus.FAILED)
+        self.assertIn("chat not found", delivery_log.error_message.lower())
 
     def test_student_flow_from_start_to_result(self):
         response = self.client.post(
