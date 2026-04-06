@@ -36,7 +36,7 @@ python manage.py runserver
 1. Home page lets a student start a mock or topic-wise test.
 2. If approved questions are insufficient, bootstrap AI generation fills the bank.
 3. Submission calculates score, weak areas, and explanation payloads.
-4. Admin can upload assets and queue ingestion from Django admin.
+4. Admin can work from the in-app admin panel to inspect assets, questions, predictions, sessions, and logs.
 5. Telegram reports are sent with `prep.tasks.send_daily_telegram_reports`.
 6. Student form no longer asks for Telegram chat ID; backend default chat routing is controlled through `.env`.
 

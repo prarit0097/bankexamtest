@@ -67,6 +67,8 @@ class PrepPlatformTests(TestCase):
         self.assertContains(response, reverse("prep:admin-predictions"))
         self.assertContains(response, reverse("prep:admin-test-sessions"))
         self.assertContains(response, reverse("prep:admin-delivery-logs"))
+        self.assertContains(response, reverse("prep:admin-ingestion-logs"))
+        self.assertNotContains(response, "Django admin")
 
     def test_admin_panel_generate_predictions_action(self):
         response = self.client.post(reverse("prep:admin-panel"), {"action": "generate_predictions"})
@@ -77,12 +79,18 @@ class PrepPlatformTests(TestCase):
         self.assertContains(follow_up, "Recent Prediction Sets")
 
     def test_admin_section_pages_are_accessible(self):
-        self.assertEqual(self.client.get(reverse("prep:admin-content-assets")).status_code, 200)
-        self.assertEqual(self.client.get(reverse("prep:admin-question-bank")).status_code, 200)
-        self.assertEqual(self.client.get(reverse("prep:admin-predictions")).status_code, 200)
-        self.assertEqual(self.client.get(reverse("prep:admin-test-sessions")).status_code, 200)
-        self.assertEqual(self.client.get(reverse("prep:admin-delivery-logs")).status_code, 200)
-        self.assertEqual(self.client.get(reverse("prep:admin-ingestion-logs")).status_code, 200)
+        for route_name in (
+            "prep:admin-content-assets",
+            "prep:admin-question-bank",
+            "prep:admin-predictions",
+            "prep:admin-test-sessions",
+            "prep:admin-delivery-logs",
+            "prep:admin-ingestion-logs",
+        ):
+            response = self.client.get(reverse(route_name))
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "Back to admin panel")
+            self.assertNotContains(response, "Django admin")
 
     def test_profile_page_loads_empty_state(self):
         response = self.client.get(reverse("prep:profile"))

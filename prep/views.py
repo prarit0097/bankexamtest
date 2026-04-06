@@ -80,10 +80,9 @@ class AdminContentAssetsView(TemplateView):
         ensure_default_taxonomy()
         context = super().get_context_data(**kwargs)
         context["section_title"] = "Content Assets"
-        context["section_intro"] = "Review uploads, ingestion status, and open the full Django admin for record-level changes."
+        context["section_intro"] = "Review uploads, ingestion status, and manage content visibility from this in-app control view."
         context["section_items"] = ContentAsset.objects.select_related("exam").order_by("-created_at")[:25]
         context["item_type"] = "content"
-        context["admin_url"] = "/admin/prep/contentasset/"
         return context
 
 
@@ -97,7 +96,6 @@ class AdminQuestionBankView(TemplateView):
         context["section_intro"] = "Inspect approved/generated questions, difficulty, and source coverage."
         context["section_items"] = Question.objects.select_related("exam", "section", "topic").order_by("-created_at")[:30]
         context["item_type"] = "question"
-        context["admin_url"] = "/admin/prep/question/"
         return context
 
 
@@ -111,7 +109,6 @@ class AdminPredictionSetsView(TemplateView):
         context["section_intro"] = "Open recent likely-question practice sets and check exam coverage."
         context["section_items"] = PredictionSet.objects.select_related("exam", "section", "topic").order_by("-generated_for", "-created_at")[:25]
         context["item_type"] = "prediction"
-        context["admin_url"] = "/admin/prep/predictionset/"
         return context
 
 
@@ -125,7 +122,6 @@ class AdminTestSessionsView(TemplateView):
         context["section_intro"] = "Track active and submitted tests, score patterns, and question load."
         context["section_items"] = TestSession.objects.select_related("exam", "section", "topic").order_by("-started_at")[:30]
         context["item_type"] = "session"
-        context["admin_url"] = "/admin/prep/testsession/"
         return context
 
 
@@ -139,7 +135,6 @@ class AdminDeliveryLogsView(TemplateView):
         context["section_intro"] = "Review outbound report delivery status and failure reasons."
         context["section_items"] = TelegramDeliveryLog.objects.select_related("telegram_link").order_by("-report_date", "-created_at")[:30]
         context["item_type"] = "delivery"
-        context["admin_url"] = "/admin/prep/telegramdeliverylog/"
         return context
 
 
@@ -153,7 +148,6 @@ class AdminIngestionLogsView(TemplateView):
         context["section_intro"] = "Inspect ingestion outcomes, chunk counts, and error messages."
         context["section_items"] = IngestionLog.objects.select_related("asset").order_by("-created_at")[:30]
         context["item_type"] = "ingestion"
-        context["admin_url"] = "/admin/prep/ingestionlog/"
         return context
 
 

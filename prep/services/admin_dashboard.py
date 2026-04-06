@@ -80,7 +80,7 @@ def build_admin_dashboard():
             {"label": "Inspect prediction sets", "url": "/admin-panel/predictions/"},
             {"label": "Monitor test sessions", "url": "/admin-panel/test-sessions/"},
             {"label": "Open delivery logs", "url": "/admin-panel/delivery-logs/"},
-            {"label": "Django admin home", "url": "/admin/"},
+            {"label": "Inspect ingestion logs", "url": "/admin-panel/ingestion-logs/"},
         ],
         "generated_at": timezone.localtime(),
     }
