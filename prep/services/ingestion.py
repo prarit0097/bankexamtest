@@ -4,7 +4,7 @@ from collections import Counter
 import requests
 from pypdf import PdfReader
 
-from prep.models import ContentAsset, ContentAssetType, CorpusChunk, Exam, IngestionLog, IngestionStatus, UploadBatch
+from prep.models import ContentAsset, ContentAssetType, CorpusChunk, Exam, IngestionLog, IngestionStatus, Question, UploadBatch
 from prep.services.ai_client import embed_texts, generate_json
 from prep.services.taxonomy import MAJOR_BANKING_TAXONOMY
 
@@ -196,6 +196,32 @@ def summarize_upload_batch(batch: UploadBatch, assets):
         "bucket_distribution": dict(bucket_counter),
         "usage_guidance": usage_list[:3],
         "arrangement_notes": _batch_arrangement_notes(batch.category, bucket_counter, exam_counter, year_counter),
+    }
+
+
+def reset_upload_category(upload_category: str):
+    assets = list(ContentAsset.objects.filter(metadata__upload_category=upload_category))
+    asset_ids = [asset.id for asset in assets]
+
+    deleted_questions = Question.objects.filter(source_asset_id__in=asset_ids).count()
+    Question.objects.filter(source_asset_id__in=asset_ids).delete()
+
+    for asset in assets:
+        if asset.uploaded_file:
+            asset.uploaded_file.delete(save=False)
+
+    deleted_assets = len(assets)
+    ContentAsset.objects.filter(id__in=asset_ids).delete()
+
+    batches = UploadBatch.objects.filter(category=upload_category)
+    deleted_batches = batches.count()
+    batches.delete()
+
+    return {
+        "deleted_assets": deleted_assets,
+        "deleted_questions": deleted_questions,
+        "deleted_batches": deleted_batches,
+        "upload_category": upload_category,
     }
 
 

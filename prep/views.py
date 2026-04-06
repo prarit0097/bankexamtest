@@ -22,6 +22,7 @@ from prep.services import (
     build_profile_dashboard,
     create_test_session,
     ensure_default_taxonomy,
+    reset_upload_category,
     run_admin_action,
     save_profile_name,
     submit_test_session,
@@ -111,6 +112,8 @@ class AdminPanelView(TemplateView):
         action = request.POST.get("action", "").strip()
         if action in {"upload_previous_year_paper", "upload_test_paper", "upload_study_material"}:
             return self._handle_upload(request, action)
+        if action in {"reset_previous_year_paper", "reset_test_paper", "reset_study_material"}:
+            return self._handle_reset(action)
         try:
             message = run_admin_action(action)
         except ValueError:
@@ -156,6 +159,24 @@ class AdminPanelView(TemplateView):
         else:
             context["study_material_form"] = form
         return self.render_to_response(self.get_context_data(**context))
+
+    def _handle_reset(self, action):
+        category_map = {
+            "reset_previous_year_paper": "previous_year_paper",
+            "reset_test_paper": "test_paper",
+            "reset_study_material": "study_material",
+        }
+        upload_category = category_map[action]
+        result = reset_upload_category(upload_category)
+        messages.success(
+            self.request,
+            (
+                f"Reset complete for {upload_category.replace('_', ' ')}. "
+                f"Deleted {result['deleted_assets']} asset(s), {result['deleted_questions']} question(s), "
+                f"and {result['deleted_batches']} batch(es)."
+            ),
+        )
+        return redirect("prep:admin-panel")
 
 
 class AdminContentAssetsView(TemplateView):

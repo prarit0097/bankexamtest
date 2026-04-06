@@ -163,6 +163,32 @@ class PrepPlatformTests(TestCase):
         self.assertEqual(asset.metadata["inferred_exam_code"], "SBI-CLERK")
         self.assertIn("mock test benchmarking", asset.metadata["recommended_usage"])
 
+    def test_admin_panel_reset_only_selected_upload_category(self):
+        previous_upload = SimpleUploadedFile(
+            "ibps-po-2023.txt",
+            b"IBPS PO 2023 previous year paper. Quantitative Aptitude and Reasoning Ability practice.",
+            content_type="text/plain",
+        )
+        test_upload = SimpleUploadedFile(
+            "sbi-clerk-mock-2024.txt",
+            b"SBI Clerk 2024 mock test paper with arithmetic, puzzles, and English language sections.",
+            content_type="text/plain",
+        )
+        self.client.post(
+            reverse("prep:admin-panel"),
+            {"action": "upload_previous_year_paper", "title": "Prev Batch", "uploaded_files": [previous_upload]},
+        )
+        self.client.post(
+            reverse("prep:admin-panel"),
+            {"action": "upload_test_paper", "title": "Test Batch", "uploaded_files": [test_upload]},
+        )
+
+        response = self.client.post(reverse("prep:admin-panel"), {"action": "reset_test_paper"})
+        self.assertEqual(response.status_code, 302)
+
+        self.assertFalse(ContentAsset.objects.filter(metadata__upload_category="test_paper").exists())
+        self.assertTrue(ContentAsset.objects.filter(metadata__upload_category="previous_year_paper").exists())
+
     def test_admin_panel_upload_study_material_infers_exam_and_usage(self):
         upload = SimpleUploadedFile(
             "rbi-assistant-guide.txt",
