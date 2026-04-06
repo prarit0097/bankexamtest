@@ -162,6 +162,7 @@ Admin kar sakta hai:
 - explanation edit
 - prediction set review
 - Telegram logs dekhna
+- admin panel se quick overview aur action buttons use karna
 
 Simple words:
 Admin app ka teacher/control-room part hai.
@@ -319,6 +320,9 @@ Yahan kuch important files hain aur unka kaam kya hai:
 
 - [prep/views.py](/e:/coding/bank%20exam%20test/prep/views.py)
   Student pages ka logic yahan hai.
+
+- [templates/prep/admin_panel.html](/e:/coding/bank%20exam%20test/templates/prep/admin_panel.html)
+  In-app admin dashboard yahan render hota hai.
 
 - [prep/forms.py](/e:/coding/bank%20exam%20test/prep/forms.py)
   Test create karne ke form yahan hain.
@@ -553,3 +557,4 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Shared top navigation bar add ki gayi jisme dashboard, start new test, aur profile links har main page par visible hain
 - `OPENAI_MODEL` ko `gpt-4o-mini` par update kiya gaya
 - Navbar se `Bank Exam Prep / Jeena Sikho` brand text remove kiya gaya, ab sirf clean navigation links dikhte hain
+- App scan ke basis par in-app admin panel add kiya gaya jahan se platform overview, quick actions, recent assets, recent tests, prediction sets, aur deep Django admin links access kiye ja sakte hain

@@ -7,9 +7,11 @@ from django.views.generic import DetailView, FormView, TemplateView
 from prep.forms import StudentNameForm, TestCreationForm
 from prep.models import ContentAsset, PredictionSet, Section, TestSession, TestStatus, Topic
 from prep.services import (
+    build_admin_dashboard,
     build_profile_dashboard,
     create_test_session,
     ensure_default_taxonomy,
+    run_admin_action,
     save_profile_name,
     submit_test_session,
 )
@@ -38,6 +40,27 @@ class HomeView(TemplateView):
             for topic in Topic.objects.select_related("section", "section__exam").order_by("section__name", "name")
         ]
         return context
+
+
+class AdminPanelView(TemplateView):
+    template_name = "prep/admin_panel.html"
+    http_method_names = ["get", "post"]
+
+    def get_context_data(self, **kwargs):
+        ensure_default_taxonomy()
+        context = super().get_context_data(**kwargs)
+        context["admin_panel"] = build_admin_dashboard()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get("action", "").strip()
+        try:
+            message = run_admin_action(action)
+        except ValueError:
+            messages.error(request, "Unknown admin action.")
+        else:
+            messages.success(request, message)
+        return redirect("prep:admin-panel")
 
 
 class ProfileView(TemplateView):

@@ -8,6 +8,7 @@ Python/Django web app for 2026 India banking-exam preparation. The app supports:
 - Likely-question practice sets based on historical pattern weighting
 - Student profile dashboard with overall performance, recent tests, weak areas, opportunities, and goals
 - Student name can be updated directly from the profile page
+- In-app admin panel with platform overview, quick actions, recent activity, and deep control links
 - Bootstrap AI mode that can serve tests before admin-uploaded corpus exists
 - Admin content ingestion for papers, books, PDFs, and syllabus material
 - Per-student Telegram daily summaries

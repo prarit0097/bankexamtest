@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel{% endblock %}
+
+{% block content %}
+<section class="profile-shell">
+    <div class="panel profile-banner">
+        <div class="profile-grid">
+            <div>
+                <span class="pill">Admin Control Surface</span>
+                <div class="kicker">Platform Oversight</div>
+                <h1>Admin Panel</h1>
+                <p class="muted">
+                    This dashboard scans the live app state and gives you one place to monitor content, question bank quality,
+                    prediction coverage, testing activity, and the fastest paths into deeper controls.
+                </p>
+                <div class="profile-badges">
+                    <div class="badge-ghost">{{ admin_panel.overview.questions }} total questions</div>
+                    <div class="badge-ghost">{{ admin_panel.overview.content_assets }} content assets</div>
+                    <div class="badge-ghost">{{ admin_panel.overview.test_sessions }} total sessions</div>
+                    <div class="badge-ghost">{{ admin_panel.overview.prediction_sets }} prediction sets</div>
+                </div>
+                <p class="muted">Last dashboard snapshot: {{ admin_panel.generated_at|date:"d M Y, h:i A" }}</p>
+            </div>
+            <div class="mini-card">
+                <div class="kicker">Quick Controls</div>
+                <h2 style="margin-bottom: 14px;">Run Admin Actions</h2>
+                <form method="post" action="{% url 'prep:admin-panel' %}" class="toolbar">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="seed_taxonomy">
+                    <button type="submit">Seed taxonomy</button>
+                </form>
+                <form method="post" action="{% url 'prep:admin-panel' %}" class="toolbar" style="margin-top: 12px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="generate_predictions">
+                    <button type="submit">Generate prediction sets</button>
+                </form>
+                <form method="post" action="{% url 'prep:admin-panel' %}" class="toolbar" style="margin-top: 12px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="ingest_pending_assets">
+                    <button type="submit">Ingest pending assets</button>
+                </form>
+                <form method="post" action="{% url 'prep:admin-panel' %}" class="toolbar" style="margin-top: 12px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="approve_generated_questions">
+                    <button type="submit">Approve generated questions</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="grid">
+    <div class="mini-card">
+        <div class="kicker">Platform Map</div>
+        <h2>Overview</h2>
+        <p>Exams: {{ admin_panel.overview.exams }}</p>
+        <p>Sections: {{ admin_panel.overview.sections }}</p>
+        <p>Topics: {{ admin_panel.overview.topics }}</p>
+        <p>Question bank: {{ admin_panel.overview.questions }}</p>
+        <p>Content assets: {{ admin_panel.overview.content_assets }}</p>
+        <p>Prediction sets: {{ admin_panel.overview.prediction_sets }}</p>
+    </div>
+    <div class="mini-card">
+        <div class="kicker">Operations</div>
+        <h2>Control Metrics</h2>
+        <p>Pending assets: {{ admin_panel.operations.pending_assets }}</p>
+        <p>Failed assets: {{ admin_panel.operations.failed_assets }}</p>
+        <p>Generated questions: {{ admin_panel.operations.generated_questions }}</p>
+        <p>Verified questions: {{ admin_panel.operations.verified_questions }}</p>
+        <p>In-progress tests: {{ admin_panel.operations.in_progress_tests }}</p>
+        <p>Submitted tests: {{ admin_panel.operations.submitted_tests }}</p>
+    </div>
+    <div class="mini-card">
+        <div class="kicker">Attention</div>
+        <h2>What Needs Review</h2>
+        {% for item in admin_panel.attention_items %}
+            <div class="question">
+                <p>{{ item }}</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="grid">
+    <div class="panel">
+        <div class="section-title-row">
+            <h2>Deep Control Links</h2>
+            <span class="pill">Open full tools</span>
+        </div>
+        {% for item in admin_panel.admin_links %}
+            <div class="question">
+                <a class="link-arrow" href="{{ item.url }}">{{ item.label }}</a>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="panel">
+        <div class="section-title-row">
+            <h2>Recent Content Assets</h2>
+            <a class="link-arrow" href="/admin/prep/contentasset/">Open all</a>
+        </div>
+        {% if admin_panel.recent_assets %}
+            {% for asset in admin_panel.recent_assets %}
+                <div class="question">
+                    <h3>{{ asset.title }}</h3>
+                    <p class="muted">{{ asset.get_asset_type_display }} | {{ asset.ingestion_status }}{% if asset.exam %} | {{ asset.exam.name }}{% endif %}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">No content assets available yet.</p>
+        {% endif %}
+    </div>
+</section>
+
+<section class="grid">
+    <div class="panel">
+        <div class="section-title-row">
+            <h2>Recent Test Sessions</h2>
+            <a class="link-arrow" href="/admin/prep/testsession/">Monitor all</a>
+        </div>
+        {% if admin_panel.recent_sessions %}
+            {% for session in admin_panel.recent_sessions %}
+                <div class="question">
+                    <h3>{{ session.exam.name }} | {{ session.get_mode_display }}</h3>
+                    <p class="muted">{{ session.get_status_display }} | {{ session.started_at|date:"d M Y, h:i A" }}</p>
+                    <p>Score: {{ session.correct_count }}/{{ session.total_questions }} | Difficulty: {{ session.get_difficulty_display }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">No test sessions yet.</p>
+        {% endif %}
+    </div>
+    <div class="panel">
+        <div class="section-title-row">
+            <h2>Recent Prediction Sets</h2>
+            <a class="link-arrow" href="/admin/prep/predictionset/">Open all</a>
+        </div>
+        {% if admin_panel.recent_predictions %}
+            {% for prediction in admin_panel.recent_predictions %}
+                <div class="question">
+                    <h3>{{ prediction.title }}</h3>
+                    <p class="muted">{{ prediction.exam.name }} | {{ prediction.generated_for }}</p>
+                    <p>{{ prediction.description }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">No prediction sets generated yet.</p>
+        {% endif %}
+    </div>
+</section>
+
+<section class="panel">
+    <div class="section-title-row">
+        <h2>Recent Ingestion Logs</h2>
+        <a class="link-arrow" href="/admin/prep/ingestionlog/">Open logs</a>
+    </div>
+    {% if admin_panel.recent_ingestion_logs %}
+        {% for log in admin_panel.recent_ingestion_logs %}
+            <div class="question">
+                <h3>{{ log.asset.title }}</h3>
+                <p class="muted">{{ log.status }} | {{ log.created_at|date:"d M Y, h:i A" }}</p>
+                <p>{{ log.message }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="muted">No ingestion logs recorded yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

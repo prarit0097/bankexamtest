@@ -49,11 +49,27 @@ class PrepPlatformTests(TestCase):
         self.assertContains(response, "Dashboard")
         self.assertContains(response, "Start New Test")
         self.assertContains(response, "Profile")
+        self.assertContains(response, "Admin Panel")
         self.assertContains(response, "Start a Test")
         self.assertContains(response, "Select a section")
         self.assertContains(response, "Select a topic")
         self.assertContains(response, "Open profile dashboard")
         self.assertNotContains(response, "Telegram")
+
+    def test_admin_panel_loads(self):
+        response = self.client.get(reverse("prep:admin-panel"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Admin Panel")
+        self.assertContains(response, "Run Admin Actions")
+        self.assertContains(response, "Deep Control Links")
+
+    def test_admin_panel_generate_predictions_action(self):
+        response = self.client.post(reverse("prep:admin-panel"), {"action": "generate_predictions"})
+        self.assertEqual(response.status_code, 302)
+
+        follow_up = self.client.get(reverse("prep:admin-panel"))
+        self.assertContains(follow_up, "Generated prediction sets")
+        self.assertContains(follow_up, "Recent Prediction Sets")
 
     def test_profile_page_loads_empty_state(self):
         response = self.client.get(reverse("prep:profile"))
@@ -62,6 +78,7 @@ class PrepPlatformTests(TestCase):
         self.assertContains(response, "Dashboard")
         self.assertContains(response, "Start New Test")
         self.assertContains(response, "Profile")
+        self.assertContains(response, "Admin Panel")
         self.assertContains(response, "Student Profile")
         self.assertContains(response, "No completed test history yet.")
         self.assertContains(response, "Edit name")
@@ -285,6 +302,7 @@ class PrepPlatformTests(TestCase):
         self.assertContains(detail, "Dashboard")
         self.assertContains(detail, "Start New Test")
         self.assertContains(detail, "Profile")
+        self.assertContains(detail, "Admin Panel")
         self.assertNotContains(detail, "Telegram")
 
         answers = {}
@@ -297,6 +315,7 @@ class PrepPlatformTests(TestCase):
         self.assertContains(result, "Dashboard")
         self.assertContains(result, "Start New Test")
         self.assertContains(result, "Profile")
+        self.assertContains(result, "Admin Panel")
         self.assertContains(result, "Result Summary")
         self.assertContains(result, "Back to dashboard")
         self.assertContains(result, "Start similar test again")
