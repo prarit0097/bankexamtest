@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Test Session {{ session.pk }}{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <a href="{% url 'prep:home' %}">Back to dashboard</a>
+    <h1>{{ session.exam.name }} {{ session.get_mode_display }}</h1>
+    <p class="muted">
+        {{ session.total_questions }} questions |
+        {{ session.duration_minutes }} minutes |
+        {{ session.get_difficulty_display }} difficulty
+        {% if session.metadata.use_prediction %}| likely-question practice set{% endif %}
+    </p>
+    {% if session.telegram_link %}
+        <p class="muted">Telegram linked: {{ session.telegram_link }}</p>
+    {% endif %}
+</div>
+
+<form method="post" action="{% url 'prep:submit-test' session.pk %}">
+    {% csrf_token %}
+    {% for session_question in session.session_questions.all %}
+        <div class="question">
+            <h3>Q{{ session_question.position }}. {{ session_question.question.stem }}</h3>
+            {% for option in session_question.question.options.all %}
+                <label>
+                    <input type="radio" name="question_{{ session_question.question_id }}" value="{{ option.id }}">
+                    {{ option.text }}
+                </label>
+            {% endfor %}
+        </div>
+    {% endfor %}
+    <button type="submit">Submit test</button>
+</form>
+{% endblock %}

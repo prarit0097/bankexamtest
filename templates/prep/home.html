@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Bank Exam Prep Platform{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="panel">
+        <span class="pill">2026 Banking Exam Prep</span>
+        <span class="pill">Bootstrap AI Mode</span>
+        <h1>Practice mocks, topic tests, predictions, and daily Telegram reporting in one platform.</h1>
+        <p class="muted">
+            This MVP can serve tests even before the admin uploads real papers or books.
+            Verified uploads later mix with generated questions, while internal provenance remains tracked.
+        </p>
+    </div>
+    <div class="panel">
+        <h2>What this build includes</h2>
+        <p class="muted">Student-selectable mock/topic tests, automated scoring, explanations, prediction sets, content ingestion, and Telegram summaries.</p>
+    </div>
+</section>
+
+<section class="grid">
+    <div class="panel">
+        <h2>Start a Test</h2>
+        <form method="post" action="{% url 'prep:start-test' %}">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="muted">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit">Generate test session</button>
+        </form>
+    </div>
+
+    <div class="panel">
+        <h2>Latest prediction sets</h2>
+        {% if prediction_sets %}
+            {% for prediction in prediction_sets %}
+                <div class="question">
+                    <strong>{{ prediction.title }}</strong>
+                    <p class="muted">{{ prediction.exam.name }} | {{ prediction.generated_for }}</p>
+                    <p>{{ prediction.description|default:"Probability-guided practice set." }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">Prediction sets will appear after students start sessions or admins run prediction jobs.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <h2>Latest content assets</h2>
+        {% if content_assets %}
+            {% for asset in content_assets %}
+                <div class="question">
+                    <strong>{{ asset.title }}</strong>
+                    <p class="muted">{{ asset.asset_type }} | {{ asset.ingestion_status }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">No content assets uploaded yet. Bootstrap AI mode can still serve practice tests.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

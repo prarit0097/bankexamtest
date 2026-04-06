@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Result {{ session.pk }}{% endblock %}
+
+{% block content %}
+<div class="grid">
+    <div class="panel">
+        <h1>Result Summary</h1>
+        <div class="stat">{{ session.correct_count }}/{{ session.total_questions }}</div>
+        <p class="muted">Accuracy {{ session.accuracy_percentage }}% | Incorrect {{ session.incorrect_count }} | Skipped {{ session.skipped_count }}</p>
+        {% if session.result %}
+            <p>{{ session.result.summary }}</p>
+        {% endif %}
+    </div>
+    <div class="panel">
+        <h2>Weak Areas</h2>
+        {% if session.result and session.result.weak_areas %}
+            {% for item in session.result.weak_areas %}
+                <div class="pill">{{ item.label }}: {{ item.count }}</div>
+            {% endfor %}
+        {% else %}
+            <p class="muted">No weak areas detected.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Answer Review</h2>
+    {% for session_question in session.session_questions.all %}
+        {% with answer=session_question.student_answer %}
+            <div class="question {% if answer.is_correct %}correct{% else %}wrong{% endif %}">
+                <h3>Q{{ session_question.position }}. {{ session_question.question.stem }}</h3>
+                <p>
+                    <strong>Your answer:</strong>
+                    {% if answer.selected_option %}
+                        {{ answer.selected_option.text }}
+                    {% else %}
+                        Not answered
+                    {% endif %}
+                </p>
+                <p><strong>Correct answer:</strong> {{ session_question.question.correct_option.text }}</p>
+                {% for item in session.result.explanation_payload %}
+                    {% if item.question_id == session_question.question_id %}
+                        <p><strong>Explanation:</strong> {{ item.explanation }}</p>
+                        {% if item.citations %}
+                            <p class="muted">Sources: {{ item.citations|join:", " }}</p>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endwith %}
+    {% endfor %}
+</div>
+{% endblock %}

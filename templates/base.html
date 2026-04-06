@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Bank Exam Prep{% endblock %}</title>
+    <style>
+        :root {
+            --bg: #f4efe6;
+            --card: #fffdf8;
+            --ink: #1e2a33;
+            --accent: #1a6d5f;
+            --muted: #6c7a80;
+            --danger: #a63f31;
+            --success: #18794e;
+            --border: #d7cec1;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Georgia, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top right, rgba(26,109,95,.16), transparent 24%),
+                linear-gradient(180deg, #f7f0e6 0%, var(--bg) 100%);
+            color: var(--ink);
+        }
+        a { color: var(--accent); }
+        .page {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 32px 20px 64px;
+        }
+        .hero {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: 2fr 1fr;
+            margin-bottom: 28px;
+        }
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 12px 24px rgba(30, 42, 51, 0.08);
+        }
+        .pill {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(26,109,95,.12);
+            color: var(--accent);
+            font-size: 14px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        h1, h2, h3 { margin-top: 0; }
+        .grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+        form .field {
+            margin-bottom: 14px;
+        }
+        label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #fff;
+            font: inherit;
+        }
+        button, .button {
+            display: inline-block;
+            border: 0;
+            border-radius: 999px;
+            padding: 12px 18px;
+            background: var(--accent);
+            color: white;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .muted { color: var(--muted); }
+        .stat {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .question {
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            margin-bottom: 18px;
+            background: rgba(255,255,255,.75);
+        }
+        .correct { border-color: rgba(24,121,78,.4); background: rgba(24,121,78,.08); }
+        .wrong { border-color: rgba(166,63,49,.4); background: rgba(166,63,49,.08); }
+        .messages { list-style: none; padding: 0; }
+        .messages li {
+            padding: 12px 14px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            background: rgba(26,109,95,.08);
+        }
+        @media (max-width: 760px) {
+            .hero { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
