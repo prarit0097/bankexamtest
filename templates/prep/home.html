@@ -25,6 +25,11 @@
 <section class="grid">
     <div class="panel">
         <h2>Start a Test</h2>
+        {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+                <div class="muted">{{ error }}</div>
+            {% endfor %}
+        {% endif %}
         <form method="post" action="{% url 'prep:start-test' %}">
             {% csrf_token %}
             {% for field in form %}
@@ -72,4 +77,75 @@
         {% endif %}
     </div>
 </section>
+
+{{ section_catalog|json_script:"section-catalog" }}
+{{ topic_catalog|json_script:"topic-catalog" }}
+<script>
+    (function () {
+        const examSelect = document.getElementById("id_exam");
+        const sectionSelect = document.getElementById("id_section");
+        const topicSelect = document.getElementById("id_topic");
+        if (!examSelect || !sectionSelect || !topicSelect) {
+            return;
+        }
+
+        const sections = JSON.parse(document.getElementById("section-catalog").textContent);
+        const topics = JSON.parse(document.getElementById("topic-catalog").textContent);
+        const initialSection = sectionSelect.value;
+        const initialTopic = topicSelect.value;
+
+        function fillSelect(select, items, selectedValue, placeholder) {
+            const fragment = document.createDocumentFragment();
+            const blank = document.createElement("option");
+            blank.value = "";
+            blank.textContent = placeholder;
+            fragment.appendChild(blank);
+
+            items.forEach((item) => {
+                const option = document.createElement("option");
+                option.value = item.id;
+                option.textContent = item.label;
+                if (String(item.id) === String(selectedValue)) {
+                    option.selected = true;
+                }
+                fragment.appendChild(option);
+            });
+
+            select.innerHTML = "";
+            select.appendChild(fragment);
+        }
+
+        function updateSections(preserveSelected = false) {
+            const selectedExam = examSelect.value;
+            const nextSelected = preserveSelected ? sectionSelect.value || initialSection : sectionSelect.value;
+            const filteredSections = sections.filter((section) => String(section.exam_id) === String(selectedExam));
+            fillSelect(sectionSelect, filteredSections, nextSelected, "Select a section");
+            updateTopics(true);
+        }
+
+        function updateTopics(preserveSelected = false) {
+            const selectedExam = examSelect.value;
+            const selectedSection = sectionSelect.value;
+            const nextSelected = preserveSelected ? topicSelect.value || initialTopic : topicSelect.value;
+            let filteredTopics = topics.filter((topic) => String(topic.exam_id) === String(selectedExam));
+            if (selectedSection) {
+                filteredTopics = filteredTopics.filter((topic) => String(topic.section_id) === String(selectedSection));
+            }
+            fillSelect(topicSelect, filteredTopics, nextSelected, "Select a topic");
+        }
+
+        examSelect.addEventListener("change", () => {
+            sectionSelect.value = "";
+            topicSelect.value = "";
+            updateSections(false);
+        });
+
+        sectionSelect.addEventListener("change", () => {
+            topicSelect.value = "";
+            updateTopics(false);
+        });
+
+        updateSections(true);
+    })();
+</script>
 {% endblock %}

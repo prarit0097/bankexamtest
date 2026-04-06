@@ -24,6 +24,7 @@ from prep.services.ingestion import ingest_asset
 from prep.services.notifications import generate_daily_summary, send_daily_summary
 from prep.services.rag import get_best_explanation
 from prep.services.taxonomy import ensure_default_taxonomy
+from prep.forms import TestCreationForm
 
 
 @override_settings(
@@ -44,6 +45,25 @@ class PrepPlatformTests(TestCase):
         response = self.client.get(reverse("prep:home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Start a Test")
+        self.assertContains(response, "Select a section")
+        self.assertContains(response, "Select a topic")
+
+    def test_bound_form_filters_sections_and_topics_for_selected_exam(self):
+        other_section = self.exam.sections.exclude(pk=self.section.pk).first()
+        form = TestCreationForm(
+            data={
+                "mode": "topic-wise",
+                "exam": self.exam.id,
+                "section": self.section.id,
+                "topic": self.topic.id,
+                "difficulty": "medium",
+                "question_count": 10,
+                "duration_minutes": 15,
+            }
+        )
+
+        self.assertTrue(form.fields["section"].queryset.filter(pk=self.section.pk).exists())
+        self.assertFalse(form.fields["topic"].queryset.filter(section=other_section).exists())
 
     def test_create_test_session_bootstraps_generated_questions(self):
         session = create_test_session(
@@ -202,3 +222,21 @@ class PrepPlatformTests(TestCase):
         result = self.client.get(reverse("prep:result", kwargs={"pk": session.pk}))
         self.assertEqual(result.status_code, 200)
         self.assertContains(result, "Result Summary")
+
+    def test_invalid_section_topic_combo_shows_clear_error(self):
+        invalid_topic = self.exam.sections.exclude(pk=self.section.pk).first().topics.first()
+        response = self.client.post(
+            reverse("prep:start-test"),
+            {
+                "mode": "topic-wise",
+                "exam": self.exam.id,
+                "section": self.section.id,
+                "topic": invalid_topic.id,
+                "difficulty": "medium",
+                "question_count": 10,
+                "duration_minutes": 15,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test session could not be created")
+        self.assertContains(response, "Choose a topic that matches the selected exam and section.")

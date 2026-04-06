@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.views.generic import DetailView, FormView, TemplateView
 
 from prep.forms import TestCreationForm
-from prep.models import ContentAsset, PredictionSet, TestSession, TestStatus
+from prep.models import ContentAsset, PredictionSet, Section, TestSession, TestStatus, Topic
 from prep.services import create_test_session, ensure_default_taxonomy, submit_test_session
 
 
@@ -20,6 +20,19 @@ class HomeView(TemplateView):
         context["prediction_sets"] = PredictionSet.objects.select_related("exam")[:5]
         context["content_assets"] = ContentAsset.objects.select_related("exam")[:5]
         context["default_telegram_chat_id"] = settings.DEFAULT_TELEGRAM_CHAT_ID
+        context["section_catalog"] = [
+            {"id": section.id, "label": str(section), "exam_id": section.exam_id}
+            for section in Section.objects.select_related("exam").order_by("exam__name", "display_order", "name")
+        ]
+        context["topic_catalog"] = [
+            {
+                "id": topic.id,
+                "label": topic.name,
+                "section_id": topic.section_id,
+                "exam_id": topic.section.exam_id,
+            }
+            for topic in Topic.objects.select_related("section", "section__exam").order_by("section__name", "name")
+        ]
         return context
 
 
@@ -43,6 +56,7 @@ class StartTestView(FormView):
         return redirect("prep:session-detail", pk=session.pk)
 
     def form_invalid(self, form):
+        messages.error(self.request, "Test session could not be created. Check the section/topic combination and try again.")
         return self.render_to_response(self.get_context_data(form=form))
 
 
