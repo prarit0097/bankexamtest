@@ -55,7 +55,7 @@ class PrepPlatformTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Student Profile")
         self.assertContains(response, "No completed test history yet.")
-        self.assertContains(response, "Save student name")
+        self.assertContains(response, "Edit name")
         self.assertNotContains(response, "Telegram")
 
     def test_profile_page_updates_student_name(self):
@@ -64,6 +64,7 @@ class PrepPlatformTests(TestCase):
 
         follow_up = self.client.get(reverse("prep:profile"))
         self.assertContains(follow_up, "Prarit Student")
+        self.assertContains(follow_up, "Edit name")
 
         link = TelegramLink.objects.get(chat_id="712615667")
         self.assertEqual(link.display_name, "Prarit Student")

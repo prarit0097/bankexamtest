@@ -4,47 +4,89 @@
 
 {% block content %}
 <div class="panel" style="margin-bottom: 20px;">
-    <a class="button" href="{% url 'prep:home' %}">Back to dashboard</a>
-    <a class="button" href="{% url 'prep:home' %}#start-test" style="margin-left: 10px;">Start a new test</a>
+    <div class="toolbar">
+        <a class="button" href="{% url 'prep:home' %}">Back to dashboard</a>
+        <a class="button secondary" href="{% url 'prep:home' %}#start-test">Start a new test</a>
+    </div>
 </div>
 
-<section class="hero">
-    <div class="panel">
-        <span class="pill">Student Profile</span>
-        <h1>{{ profile.profile_name }}</h1>
-        {% if profile.profile_created_at %}
-            <p class="muted">Profile created on {{ profile.profile_created_at|date:"d M Y, h:i A" }}</p>
-        {% endif %}
-        {% if profile.last_active_at %}
-            <p class="muted">Last active on {{ profile.last_active_at|date:"d M Y, h:i A" }}</p>
-        {% endif %}
-        {% if not profile.has_test_data %}
-            <p>No completed test history yet. Start a test and this page will begin showing your performance trends, goals, strengths, and weak areas.</p>
-        {% endif %}
-        <form method="post" action="{% url 'prep:profile' %}" style="margin-top: 20px;">
-            {% csrf_token %}
-            <div class="field">
-                <label for="{{ name_form.display_name.id_for_label }}">{{ name_form.display_name.label }}</label>
-                {{ name_form.display_name }}
-                {% if name_form.display_name.help_text %}
-                    <small class="muted">{{ name_form.display_name.help_text }}</small>
+<section class="profile-shell">
+    <div class="panel profile-banner">
+        <div class="profile-grid">
+            <div>
+                <span class="pill">Student Profile</span>
+                <div class="profile-name-row">
+                    <div>
+                        <div class="kicker">Performance Identity</div>
+                        <h1>{{ profile.profile_name }}</h1>
+                    </div>
+                    <details class="editor" {% if name_form.errors %}open{% endif %}>
+                        <summary>Edit name</summary>
+                        <form method="post" action="{% url 'prep:profile' %}" style="margin-top: 16px; min-width: min(100%, 340px);">
+                            {% csrf_token %}
+                            <div class="field">
+                                <label for="{{ name_form.display_name.id_for_label }}">{{ name_form.display_name.label }}</label>
+                                {{ name_form.display_name }}
+                                {% if name_form.display_name.help_text %}
+                                    <small class="muted">{{ name_form.display_name.help_text }}</small>
+                                {% endif %}
+                                {% for error in name_form.display_name.errors %}
+                                    <div class="muted">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <button type="submit">Save student name</button>
+                        </form>
+                    </details>
+                </div>
+                <div class="profile-badges">
+                    {% if profile.profile_created_at %}
+                        <div class="badge-ghost">Joined {{ profile.profile_created_at|date:"d M Y" }}</div>
+                    {% endif %}
+                    {% if profile.last_active_at %}
+                        <div class="badge-ghost">Last active {{ profile.last_active_at|date:"d M Y, h:i A" }}</div>
+                    {% endif %}
+                    <div class="badge-ghost">{{ profile.total_completed }} completed tests</div>
+                    <div class="badge-ghost">{{ profile.current_streak }}-day streak</div>
+                </div>
+                {% if not profile.has_test_data %}
+                    <p>No completed test history yet. Start a test and this page will begin showing your performance trends, goals, strengths, and weak areas.</p>
+                {% else %}
+                    <p class="muted">Your profile brings together test momentum, exam readiness, weak patterns, and next best actions in one place.</p>
+                    <div class="progress-rail">
+                        <div class="progress-fill" style="width: {{ profile.overall_accuracy }}%;"></div>
+                    </div>
                 {% endif %}
-                {% for error in name_form.display_name.errors %}
-                    <div class="muted">{{ error }}</div>
-                {% endfor %}
             </div>
-            <button type="submit">Save student name</button>
-        </form>
-    </div>
-    <div class="panel">
-        <h2>Overview</h2>
-        <p class="muted">This page combines your test history, performance trends, repeated weak areas, and next-step goals.</p>
-        <p class="muted">Use this page to review your growth, spot weak sections, and decide what to practice next.</p>
+            <div class="mini-card">
+                <div class="kicker">Snapshot</div>
+                <h2 style="margin-bottom: 12px;">Overview</h2>
+                <p class="muted">This page combines your test history, performance trends, repeated weak areas, and next-step goals.</p>
+                <div class="micro-grid" style="margin-top: 18px;">
+                    <div>
+                        <div class="kicker">Accuracy</div>
+                        <div class="stat">{{ profile.overall_accuracy }}%</div>
+                    </div>
+                    <div>
+                        <div class="kicker">Best Score</div>
+                        <div class="stat">{{ profile.best_accuracy }}%</div>
+                    </div>
+                    <div>
+                        <div class="kicker">Questions</div>
+                        <div class="stat">{{ profile.total_questions }}</div>
+                    </div>
+                    <div>
+                        <div class="kicker">Prediction Tests</div>
+                        <div class="stat">{{ profile.prediction_tests }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
 <section class="grid">
-    <div class="panel">
+    <div class="mini-card">
+        <div class="kicker">Volume</div>
         <h2>Test Numbers</h2>
         <div class="stat">{{ profile.total_completed }}</div>
         <p class="muted">Completed tests</p>
@@ -52,7 +94,8 @@
         <p>Completion rate: {{ profile.completion_rate }}%</p>
         <p>Prediction-based tests: {{ profile.prediction_tests }}</p>
     </div>
-    <div class="panel">
+    <div class="mini-card">
+        <div class="kicker">Performance</div>
         <h2>Overall Performance</h2>
         <div class="stat">{{ profile.overall_accuracy }}%</div>
         <p class="muted">Overall accuracy</p>
@@ -60,7 +103,8 @@
         <p>Best accuracy: {{ profile.best_accuracy }}%</p>
         <p>Questions solved: {{ profile.total_questions }}</p>
     </div>
-    <div class="panel">
+    <div class="mini-card">
+        <div class="kicker">Consistency</div>
         <h2>Answer Mix</h2>
         <p>Correct: {{ profile.total_correct }}</p>
         <p>Incorrect: {{ profile.total_incorrect }}</p>
@@ -72,7 +116,10 @@
 
 <section class="grid">
     <div class="panel">
-        <h2>Weak Areas</h2>
+        <div class="section-title-row">
+            <h2>Weak Areas</h2>
+            <span class="pill">Revise first</span>
+        </div>
         {% if profile.weak_areas %}
             {% for item in profile.weak_areas %}
                 <div class="pill">{{ item.label }}: {{ item.count }}</div>
@@ -82,7 +129,10 @@
         {% endif %}
     </div>
     <div class="panel">
-        <h2>Strengths</h2>
+        <div class="section-title-row">
+            <h2>Strengths</h2>
+            <span class="pill">Keep compounding</span>
+        </div>
         {% if profile.strengths %}
             {% for item in profile.strengths %}
                 <div class="pill">{{ item.label }}: {{ item.count }}</div>
@@ -92,7 +142,10 @@
         {% endif %}
     </div>
     <div class="panel">
-        <h2>Exam Mix</h2>
+        <div class="section-title-row">
+            <h2>Exam Mix</h2>
+            <span class="pill">Practice balance</span>
+        </div>
         {% if profile.exam_mix %}
             {% for item in profile.exam_mix %}
                 <div class="pill">{{ item.label }}: {{ item.count }}</div>
@@ -113,7 +166,10 @@
 
 <section class="grid">
     <div class="panel">
-        <h2>Opportunities</h2>
+        <div class="section-title-row">
+            <h2>Opportunities</h2>
+            <span class="pill">Where to improve</span>
+        </div>
         {% if profile.opportunities %}
             {% for item in profile.opportunities %}
                 <div class="question">
@@ -126,7 +182,10 @@
         {% endif %}
     </div>
     <div class="panel">
-        <h2>Goals</h2>
+        <div class="section-title-row">
+            <h2>Goals</h2>
+            <span class="pill">Next milestones</span>
+        </div>
         {% for item in profile.goals %}
             <div class="question">
                 <h3>{{ item.title }}</h3>
@@ -138,7 +197,10 @@
 
 <section class="grid">
     <div class="panel">
-        <h2>Recent Completed Tests</h2>
+        <div class="section-title-row">
+            <h2>Recent Completed Tests</h2>
+            <a class="link-arrow" href="{% url 'prep:home' %}#start-test">Start another</a>
+        </div>
         {% if profile.recent_sessions %}
             {% for test in profile.recent_sessions %}
                 <div class="question">
@@ -150,7 +212,7 @@
                     {% elif test.section %}
                         <p>Section focus: {{ test.section.name }}</p>
                     {% endif %}
-                    <a href="{% url 'prep:result' test.pk %}">Open result</a>
+                    <a class="link-arrow" href="{% url 'prep:result' test.pk %}">Open result</a>
                 </div>
             {% endfor %}
         {% else %}
@@ -158,14 +220,17 @@
         {% endif %}
     </div>
     <div class="panel">
-        <h2>In-progress Tests</h2>
+        <div class="section-title-row">
+            <h2>In-progress Tests</h2>
+            <span class="pill">Resume and finish</span>
+        </div>
         {% if profile.in_progress_sessions %}
             {% for test in profile.in_progress_sessions %}
                 <div class="question">
                     <h3>{{ test.exam.name }} | {{ test.get_mode_display }}</h3>
                     <p class="muted">Started on {{ test.started_at|date:"d M Y, h:i A" }}</p>
                     <p>{{ test.total_questions }} questions | {{ test.duration_minutes }} minutes</p>
-                    <a href="{% url 'prep:session-detail' test.pk %}">Resume test</a>
+                    <a class="link-arrow" href="{% url 'prep:session-detail' test.pk %}">Resume test</a>
                 </div>
             {% endfor %}
         {% else %}
