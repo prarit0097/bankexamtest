@@ -552,3 +552,4 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Profile page ko visually refine kiya gaya with stronger dashboard styling and `Edit name` interaction after save
 - Shared top navigation bar add ki gayi jisme dashboard, start new test, aur profile links har main page par visible hain
 - `OPENAI_MODEL` ko `gpt-4o-mini` par update kiya gaya
+- Navbar se `Bank Exam Prep / Jeena Sikho` brand text remove kiya gaya, ab sirf clean navigation links dikhte hain

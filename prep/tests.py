@@ -44,6 +44,8 @@ class PrepPlatformTests(TestCase):
     def test_home_page_loads(self):
         response = self.client.get(reverse("prep:home"))
         self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Jeena Sikho")
+        self.assertNotContains(response, "BANK EXAM PREP")
         self.assertContains(response, "Dashboard")
         self.assertContains(response, "Start New Test")
         self.assertContains(response, "Profile")
@@ -56,6 +58,7 @@ class PrepPlatformTests(TestCase):
     def test_profile_page_loads_empty_state(self):
         response = self.client.get(reverse("prep:profile"))
         self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Jeena Sikho")
         self.assertContains(response, "Dashboard")
         self.assertContains(response, "Start New Test")
         self.assertContains(response, "Profile")

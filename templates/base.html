@@ -40,7 +40,7 @@
         .site-nav {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
             gap: 18px;
             margin-bottom: 22px;
             padding: 16px 18px;
@@ -50,27 +50,11 @@
             box-shadow: var(--shadow);
             backdrop-filter: blur(12px);
         }
-        .site-brand {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .site-brand strong {
-            font-family: "Cormorant Garamond", Georgia, serif;
-            font-size: 2rem;
-            line-height: .9;
-        }
-        .site-brand span {
-            color: var(--muted);
-            font-size: 13px;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            font-weight: 800;
-        }
         .nav-links {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+            justify-content: center;
         }
         .nav-link {
             display: inline-flex;
@@ -330,10 +314,6 @@
 <body>
     <div class="page">
         <nav class="site-nav">
-            <div class="site-brand">
-                <span>Bank Exam Prep</span>
-                <strong>Jeena Sikho</strong>
-            </div>
             <div class="nav-links">
                 <a class="nav-link{% if request.resolver_match.url_name == 'home' %} active{% endif %}" href="{% url 'prep:home' %}">
                     Dashboard
