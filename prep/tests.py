@@ -198,6 +198,20 @@ class PrepPlatformTests(TestCase):
         self.assertEqual(reset_batch.category, "test_paper")
         self.assertIn("Data removed", reset_batch.summary["reset_notice"])
 
+    def test_legacy_paper_assets_are_counted_and_reset(self):
+        ContentAsset.objects.create(
+            title="Legacy IBPS Clerk Paper",
+            asset_type=ContentAssetType.PAPER,
+            metadata={},
+            is_public_licensed=True,
+            ingestion_status="complete",
+        )
+        panel = self.client.get(reverse("prep:admin-panel"))
+        self.assertContains(panel, "Current files in this section: 1")
+
+        self.client.post(reverse("prep:admin-panel"), {"action": "reset_previous_year_paper"})
+        self.assertFalse(ContentAsset.objects.filter(title="Legacy IBPS Clerk Paper").exists())
+
     def test_admin_panel_upload_study_material_infers_exam_and_usage(self):
         upload = SimpleUploadedFile(
             "rbi-assistant-guide.txt",

@@ -200,7 +200,7 @@ def summarize_upload_batch(batch: UploadBatch, assets):
 
 
 def reset_upload_category(upload_category: str):
-    assets = list(ContentAsset.objects.filter(metadata__upload_category=upload_category))
+    assets = list(_get_assets_for_category(upload_category))
     asset_ids = [asset.id for asset in assets]
 
     deleted_questions = Question.objects.filter(source_asset_id__in=asset_ids).count()
@@ -244,11 +244,37 @@ def reset_upload_category(upload_category: str):
     }
 
 
+def get_upload_category_count(upload_category: str):
+    return _get_assets_for_category(upload_category).count()
+
+
 def _resolve_asset_type(upload_category: str, filename: str):
     suffix = Path(filename).suffix.lower()
     if upload_category == "study_material":
         return ContentAssetType.BOOK if suffix in {".pdf", ".doc", ".docx"} else ContentAssetType.UPLOAD
     return ContentAssetType.PAPER
+
+
+def _get_assets_for_category(upload_category: str):
+    assets = list(ContentAsset.objects.all())
+    matched_ids = [asset.id for asset in assets if _asset_matches_category(asset, upload_category)]
+    return ContentAsset.objects.filter(id__in=matched_ids)
+
+
+def _asset_matches_category(asset: ContentAsset, upload_category: str) -> bool:
+    explicit_category = asset.metadata.get("upload_category")
+    if explicit_category:
+        return explicit_category == upload_category
+
+    if upload_category == "previous_year_paper":
+        return asset.asset_type == ContentAssetType.PAPER
+    if upload_category == "test_paper":
+        title = (asset.title or "").lower()
+        notes = (asset.source_notes or "").lower()
+        return "mock" in title or "test paper" in title or "mock" in notes or "test paper" in notes
+    if upload_category == "study_material":
+        return asset.asset_type in {ContentAssetType.BOOK, ContentAssetType.PDF, ContentAssetType.UPLOAD}
+    return False
 
 
 def _infer_year(content: str):

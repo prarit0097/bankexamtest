@@ -19,7 +19,7 @@ from prep.models import (
     Topic,
     UploadBatch,
 )
-from prep.services.ingestion import ingest_asset
+from prep.services.ingestion import get_upload_category_count, ingest_asset
 from prep.services.prediction import generate_prediction_set
 from prep.services.taxonomy import ensure_default_taxonomy
 
@@ -60,9 +60,9 @@ def build_admin_dashboard():
             "test_results": TestResult.objects.count(),
         },
         "upload_category_counts": {
-            "previous_year_paper": ContentAsset.objects.filter(metadata__upload_category="previous_year_paper").count(),
-            "test_paper": ContentAsset.objects.filter(metadata__upload_category="test_paper").count(),
-            "study_material": ContentAsset.objects.filter(metadata__upload_category="study_material").count(),
+            "previous_year_paper": get_upload_category_count("previous_year_paper"),
+            "test_paper": get_upload_category_count("test_paper"),
+            "study_material": get_upload_category_count("study_material"),
         },
         "operations": {
             "pending_assets": asset_status_counts.get(IngestionStatus.PENDING, 0),
