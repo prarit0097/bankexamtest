@@ -489,6 +489,9 @@ Main values:
 - `OPENAI_EMBEDDING_MODEL` = embeddings model
 - `TELEGRAM_BOT_TOKEN` = Telegram bot access
 - `DEFAULT_TELEGRAM_CHAT_ID` = backend se fixed Telegram chat routing
+- `DATA_UPLOAD_MAX_NUMBER_FILES` = ek request me kitni files upload ho sakti hain
+- `DATA_UPLOAD_MAX_MEMORY_SIZE` = poori upload request ka max size bytes me
+- `FILE_UPLOAD_MAX_MEMORY_SIZE` = ek file ko memory me rakhne ki limit bytes me
 
 Important:
 Real secrets ko public file me nahi rakhna chahiye.
@@ -574,3 +577,4 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Predicted Papers page me cards clickable banaye gaye; click karne par full predicted paper detail khulta hai jahan sare predicted questions list hote hain
 - Predicted paper detail ko real-paper style me improve kiya gaya: section grouping, full question list, likely answer highlighting, aur weak placeholder `[AI Practice]` items ko filter karne ki logic add ki gayi
 - Old generated placeholder stems ko bhi predicted paper detail view se explicitly hide kiya gaya, taki purane stored sets me bhi fake-looking questions na dikhen
+- Bulk uploads ke liye Django upload limits raise ki gayi, taki 135 jaise large multi-file uploads `TooManyFilesSent` error na den
