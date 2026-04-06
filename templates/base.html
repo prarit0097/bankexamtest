@@ -321,6 +321,9 @@
                 <a class="nav-link" href="{% url 'prep:home' %}#start-test">
                     Start New Test
                 </a>
+                <a class="nav-link{% if request.resolver_match.url_name == 'predicted-papers' %} active{% endif %}" href="{% url 'prep:predicted-papers' %}">
+                    Predicted Papers
+                </a>
                 <a class="nav-link{% if request.resolver_match.url_name == 'profile' %} active{% endif %}" href="{% url 'prep:profile' %}">
                     Profile
                 </a>

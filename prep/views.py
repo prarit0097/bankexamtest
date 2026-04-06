@@ -37,6 +37,7 @@ class HomeView(TemplateView):
         context["form"] = kwargs.get("form") or TestCreationForm()
         context["prediction_sets"] = PredictionSet.objects.select_related("exam")[:5]
         context["content_assets"] = ContentAsset.objects.select_related("exam")[:5]
+        context["predicted_papers"] = PredictionSet.objects.select_related("exam").order_by("-generated_for", "-created_at")[:6]
         context["section_catalog"] = [
             {"id": section.id, "label": str(section), "exam_id": section.exam_id}
             for section in Section.objects.select_related("exam").order_by("exam__name", "display_order", "name")
@@ -50,6 +51,17 @@ class HomeView(TemplateView):
             }
             for topic in Topic.objects.select_related("section", "section__exam").order_by("section__name", "name")
         ]
+        return context
+
+
+class PredictedPapersView(TemplateView):
+    template_name = "prep/predicted_papers.html"
+
+    def get_context_data(self, **kwargs):
+        ensure_default_taxonomy()
+        context = super().get_context_data(**kwargs)
+        prediction_sets = PredictionSet.objects.select_related("exam", "section", "topic").order_by("-generated_for", "-created_at")
+        context["prediction_sets"] = prediction_sets
         return context
 
 

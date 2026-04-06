@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Predicted Papers{% endblock %}
+
+{% block content %}
+<section class="profile-shell">
+    <div class="panel profile-banner">
+        <div class="profile-grid">
+            <div>
+                <span class="pill">Future Paper Intelligence</span>
+                <div class="kicker">All Exams Prediction View</div>
+                <h1>Predicted Papers</h1>
+                <p class="muted">
+                    This page gathers the latest future predicted paper drafts for all supported exams. Prediction summaries
+                    and likely focus patterns are OpenAI-assisted wherever prediction logic is used, with safe fallback when AI is unavailable.
+                </p>
+            </div>
+            <div class="mini-card">
+                <div class="kicker">Prediction Scope</div>
+                <h2>At a glance</h2>
+                <div class="micro-grid" style="margin-top: 18px;">
+                    <div>
+                        <div class="kicker">Sets</div>
+                        <div class="stat">{{ prediction_sets|length }}</div>
+                    </div>
+                    <div>
+                        <div class="kicker">Exams covered</div>
+                        <div class="stat">{{ prediction_sets|dictsort:"exam.name"|length }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="grid">
+    {% if prediction_sets %}
+        {% for prediction in prediction_sets %}
+            <div class="panel">
+                <div class="section-title-row">
+                    <h2>{{ prediction.weight_snapshot.predicted_paper_title|default:prediction.title }}</h2>
+                    <span class="pill">{{ prediction.exam.name }}</span>
+                </div>
+                <p class="muted">{{ prediction.generated_for }}{% if prediction.section %} | {{ prediction.section.name }}{% endif %}{% if prediction.topic %} | {{ prediction.topic.name }}{% endif %}</p>
+                <p>{{ prediction.description }}</p>
+                {% if prediction.weight_snapshot.predicted_pattern %}
+                    <div class="question">
+                        <h3>Likely Pattern</h3>
+                        <p>{{ prediction.weight_snapshot.predicted_pattern }}</p>
+                    </div>
+                {% endif %}
+                {% if prediction.weight_snapshot.predicted_focus_areas %}
+                    <div class="section-title-row">
+                        <h3 style="margin-bottom: 0;">Likely Focus Areas</h3>
+                    </div>
+                    {% for item in prediction.weight_snapshot.predicted_focus_areas %}
+                        <div class="pill">{{ item }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="panel">
+            <h2>No predicted papers yet</h2>
+            <p class="muted">Generate prediction sets from the admin panel and this page will fill automatically.</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

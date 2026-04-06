@@ -7,6 +7,7 @@ app_name = "prep"
 
 urlpatterns = [
     path("", views.HomeView.as_view(), name="home"),
+    path("predicted-papers/", views.PredictedPapersView.as_view(), name="predicted-papers"),
     path("admin-panel/", views.AdminPanelView.as_view(), name="admin-panel"),
     path("admin-panel/content-assets/", views.AdminContentAssetsView.as_view(), name="admin-content-assets"),
     path("admin-panel/questions/", views.AdminQuestionBankView.as_view(), name="admin-question-bank"),

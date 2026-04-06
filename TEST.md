@@ -562,6 +562,7 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Student name change option add kiya gaya aur visible pages se Telegram-related text hata diya gaya
 - Profile page ko visually refine kiya gaya with stronger dashboard styling and `Edit name` interaction after save
 - Shared top navigation bar add ki gayi jisme dashboard, start new test, aur profile links har main page par visible hain
+- Shared nav aur home page me `Predicted Papers` section add ki gayi jahan sare exams ke future predicted paper drafts dikhte hain
 - `OPENAI_MODEL` ko `gpt-4o-mini` par update kiya gaya
 - Navbar se `Bank Exam Prep / Jeena Sikho` brand text remove kiya gaya, ab sirf clean navigation links dikhte hain
 - App scan ke basis par in-app admin panel add kiya gaya jahan se platform overview, quick actions, recent assets, recent tests, prediction sets, aur deep Django admin links access kiye ja sakte hain
@@ -569,3 +570,4 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - End-user admin UX me saare visible Django admin links/buttons remove kiye gaye; ab sirf in-app admin pages dikhte hain
 - Admin panel me 3 structured upload flows add kiye gaye: previous year papers, test papers, aur study materials; upload ke baad app auto-scan karke exam, year, aur recommended usage infer karta hai
 - Bulk upload intelligence add ki gayi: ek hi upload me multiple files process hoti hain, upload batch banta hai, exam/year/bucket distribution summarize hota hai, aur app ko samajh aata hai ki in documents ko backend me kaise organize karna hai
+- Prediction flow ko OpenAI-assisted banaya gaya: prediction set generation ab likely paper title, summary, likely pattern, aur focus areas AI ke through enrich kar sakti hai; fallback logic bhi present hai

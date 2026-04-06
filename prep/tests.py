@@ -58,13 +58,25 @@ class PrepPlatformTests(TestCase):
         self.assertNotContains(response, "BANK EXAM PREP")
         self.assertContains(response, "Dashboard")
         self.assertContains(response, "Start New Test")
+        self.assertContains(response, "Predicted Papers")
         self.assertContains(response, "Profile")
         self.assertContains(response, "Admin Panel")
         self.assertContains(response, "Start a Test")
         self.assertContains(response, "Select a section")
         self.assertContains(response, "Select a topic")
         self.assertContains(response, "Open profile dashboard")
+        self.assertContains(response, "Browse predicted papers")
         self.assertNotContains(response, "Telegram")
+
+    def test_predicted_papers_page_loads(self):
+        generate_response = self.client.post(reverse("prep:admin-panel"), {"action": "generate_predictions"})
+        self.assertEqual(generate_response.status_code, 302)
+
+        response = self.client.get(reverse("prep:predicted-papers"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Predicted Papers")
+        self.assertContains(response, "Future Paper Intelligence")
+        self.assertContains(response, "Likely Pattern")
 
     def test_admin_panel_loads(self):
         response = self.client.get(reverse("prep:admin-panel"))

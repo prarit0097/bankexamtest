@@ -17,6 +17,7 @@
     <div class="panel">
         <h2>What this build includes</h2>
         <p class="muted">Student-selectable mock/topic tests, automated scoring, explanations, prediction sets, content ingestion, and progress summaries.</p>
+        <a class="button secondary" href="{% url 'prep:predicted-papers' %}">Browse predicted papers</a>
     </div>
 </section>
 
@@ -56,6 +57,7 @@
                     <p>{{ prediction.description|default:"Probability-guided practice set." }}</p>
                 </div>
             {% endfor %}
+            <a class="link-arrow" href="{% url 'prep:predicted-papers' %}">Open all predicted papers</a>
         {% else %}
             <p class="muted">Prediction sets will appear after students start sessions or admins run prediction jobs.</p>
         {% endif %}

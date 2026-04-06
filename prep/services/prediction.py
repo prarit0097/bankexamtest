@@ -4,6 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from prep.models import PredictionSet, PredictionSetQuestion, Question, QuestionSourceType
+from prep.services.ai_client import generate_json
 from prep.services.bootstrap import ensure_generated_questions
 
 
@@ -49,4 +50,55 @@ def generate_prediction_set(exam, section=None, topic=None):
             question=question,
             score=question_scores[question.id] + topic_weights[weight_key],
         )
+
+    ai_payload = _build_prediction_ai_payload(exam, queryset, topic_weights)
+    prediction_set.description = ai_payload["summary"]
+    prediction_set.weight_snapshot = {
+        **prediction_set.weight_snapshot,
+        "predicted_paper_title": ai_payload["predicted_paper_title"],
+        "predicted_pattern": ai_payload["predicted_pattern"],
+        "predicted_focus_areas": ai_payload["predicted_focus_areas"],
+    }
+    prediction_set.save(update_fields=["description", "weight_snapshot", "updated_at"])
     return prediction_set
+
+
+def _build_prediction_ai_payload(exam, queryset, topic_weights):
+    topic_names = []
+    for question in queryset[:12]:
+        if question.topic and question.topic.name not in topic_names:
+            topic_names.append(question.topic.name)
+        elif question.section and question.section.name not in topic_names:
+            topic_names.append(question.section.name)
+
+    fallback = {
+        "predicted_paper_title": f"Future predicted paper for {exam.name}",
+        "summary": (
+            f"OpenAI-assisted probability view for {exam.name}. Use this set as a future predicted paper draft, "
+            "prioritizing historically repeated sections and the strongest topic signals from the current bank."
+        ),
+        "predicted_pattern": "Balanced paper with heavier emphasis on recurring high-frequency sections and recent trend topics.",
+        "predicted_focus_areas": topic_names[:5],
+    }
+
+    if not settings.OPENAI_API_KEY:
+        return fallback
+
+    prompt = (
+        "You are helping a banking exam prep platform create a future predicted paper view. "
+        "Return JSON with keys predicted_paper_title, summary, predicted_pattern, predicted_focus_areas. "
+        f"Exam: {exam.name}. "
+        f"Detected recurring topic signals: {topic_names[:8]}. "
+        f"Topic weights: {dict(list(topic_weights.items())[:10])}. "
+        "Keep the summary under 70 words. predicted_focus_areas should be a short list of strings."
+    )
+    payload = generate_json(prompt)
+    if not isinstance(payload, dict):
+        return fallback
+
+    return {
+        "predicted_paper_title": payload.get("predicted_paper_title") or fallback["predicted_paper_title"],
+        "summary": payload.get("summary") or fallback["summary"],
+        "predicted_pattern": payload.get("predicted_pattern") or fallback["predicted_pattern"],
+        "predicted_focus_areas": payload.get("predicted_focus_areas") or fallback["predicted_focus_areas"],
+    }
