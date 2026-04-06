@@ -95,6 +95,8 @@ class PrepPlatformTests(TestCase):
         self.assertContains(response, "Admin Panel")
         self.assertContains(response, "Run Admin Actions")
         self.assertContains(response, "Deep Control Links")
+        self.assertContains(response, "Uploading files...")
+        self.assertContains(response, "data-upload-form")
         self.assertContains(response, reverse("prep:admin-content-assets"))
         self.assertContains(response, reverse("prep:admin-question-bank"))
         self.assertContains(response, reverse("prep:admin-predictions"))

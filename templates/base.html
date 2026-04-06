@@ -293,6 +293,40 @@
             font-weight: 800;
             text-decoration: none;
         }
+        .upload-progress {
+            margin-top: 16px;
+            display: none;
+            padding: 16px;
+            border-radius: 18px;
+            background: rgba(13,108,96,.08);
+            border: 1px solid rgba(13,108,96,.16);
+        }
+        .upload-progress.visible {
+            display: block;
+        }
+        .upload-progress-bar {
+            width: 100%;
+            height: 14px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(13,108,96,.12);
+            margin: 10px 0 8px;
+        }
+        .upload-progress-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #d08a32 0%, var(--accent) 90%);
+            transition: width .2s ease;
+        }
+        .upload-progress-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--muted);
+        }
         @media (max-width: 760px) {
             .site-nav {
                 flex-direction: column;
@@ -308,6 +342,7 @@
             .hero { grid-template-columns: 1fr; }
             .profile-grid { grid-template-columns: 1fr; }
             .profile-name-row { align-items: flex-start; }
+            .upload-progress-meta { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>

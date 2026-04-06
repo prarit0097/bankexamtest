@@ -57,7 +57,7 @@
             <h2>Upload Previous Year Question Papers</h2>
             <span class="pill">Auto scan exam + year + usage</span>
         </div>
-        <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data">
+        <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data" data-upload-form>
             {% csrf_token %}
             <input type="hidden" name="action" value="upload_previous_year_paper">
             {% for field in previous_year_form %}
@@ -73,6 +73,16 @@
                 </div>
             {% endfor %}
             <button type="submit">Upload previous year paper batch</button>
+            <div class="upload-progress" data-upload-progress>
+                <strong>Uploading files...</strong>
+                <div class="upload-progress-bar">
+                    <div class="upload-progress-fill" data-upload-fill></div>
+                </div>
+                <div class="upload-progress-meta">
+                    <span data-upload-status>Preparing batch...</span>
+                    <strong data-upload-percent>0%</strong>
+                </div>
+            </div>
         </form>
     </div>
     <div class="panel">
@@ -80,7 +90,7 @@
             <h2>Upload Test Papers</h2>
             <span class="pill">Auto route into practice system</span>
         </div>
-        <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data">
+        <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data" data-upload-form>
             {% csrf_token %}
             <input type="hidden" name="action" value="upload_test_paper">
             {% for field in test_paper_form %}
@@ -96,6 +106,16 @@
                 </div>
             {% endfor %}
             <button type="submit">Upload test paper batch</button>
+            <div class="upload-progress" data-upload-progress>
+                <strong>Uploading files...</strong>
+                <div class="upload-progress-bar">
+                    <div class="upload-progress-fill" data-upload-fill></div>
+                </div>
+                <div class="upload-progress-meta">
+                    <span data-upload-status>Preparing batch...</span>
+                    <strong data-upload-percent>0%</strong>
+                </div>
+            </div>
         </form>
     </div>
     <div class="panel">
@@ -103,7 +123,7 @@
             <h2>Upload Study Materials</h2>
             <span class="pill">Auto route into explanation support</span>
         </div>
-        <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data">
+        <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data" data-upload-form>
             {% csrf_token %}
             <input type="hidden" name="action" value="upload_study_material">
             {% for field in study_material_form %}
@@ -119,6 +139,16 @@
                 </div>
             {% endfor %}
             <button type="submit">Upload study material batch</button>
+            <div class="upload-progress" data-upload-progress>
+                <strong>Uploading files...</strong>
+                <div class="upload-progress-bar">
+                    <div class="upload-progress-fill" data-upload-fill></div>
+                </div>
+                <div class="upload-progress-meta">
+                    <span data-upload-status>Preparing batch...</span>
+                    <strong data-upload-percent>0%</strong>
+                </div>
+            </div>
         </form>
     </div>
 </section>
@@ -265,4 +295,66 @@
         <p class="muted">No ingestion logs recorded yet.</p>
     {% endif %}
 </section>
+<script>
+    (function () {
+        const forms = document.querySelectorAll("[data-upload-form]");
+        forms.forEach((form) => {
+            const progress = form.querySelector("[data-upload-progress]");
+            const fill = form.querySelector("[data-upload-fill]");
+            const percentLabel = form.querySelector("[data-upload-percent]");
+            const statusLabel = form.querySelector("[data-upload-status]");
+            const submitButton = form.querySelector("button[type='submit']");
+
+            form.addEventListener("submit", function (event) {
+                event.preventDefault();
+
+                const request = new XMLHttpRequest();
+                const formData = new FormData(form);
+                progress.classList.add("visible");
+                submitButton.disabled = true;
+                statusLabel.textContent = "Uploading files to server...";
+                fill.style.width = "0%";
+                percentLabel.textContent = "0%";
+
+                request.upload.addEventListener("progress", function (progressEvent) {
+                    if (!progressEvent.lengthComputable) {
+                        return;
+                    }
+                    const percent = Math.min(95, Math.round((progressEvent.loaded / progressEvent.total) * 100));
+                    fill.style.width = percent + "%";
+                    percentLabel.textContent = percent + "%";
+                });
+
+                request.addEventListener("load", function () {
+                    if (request.status >= 200 && request.status < 400) {
+                        fill.style.width = "100%";
+                        percentLabel.textContent = "100%";
+                        statusLabel.textContent = "Upload complete. Finalizing ingestion summary...";
+                        window.location.reload();
+                    } else {
+                        statusLabel.textContent = "Upload failed. Please review the form and try again.";
+                        submitButton.disabled = false;
+                    }
+                });
+
+                request.addEventListener("error", function () {
+                    statusLabel.textContent = "Upload failed because the network request could not complete.";
+                    submitButton.disabled = false;
+                });
+
+                request.addEventListener("readystatechange", function () {
+                    if (request.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+                        fill.style.width = "97%";
+                        percentLabel.textContent = "97%";
+                        statusLabel.textContent = "Files received. App is scanning exam, year, and usage...";
+                    }
+                });
+
+                request.open(form.method, form.action);
+                request.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                request.send(formData);
+            });
+        });
+    })();
+</script>
 {% endblock %}
