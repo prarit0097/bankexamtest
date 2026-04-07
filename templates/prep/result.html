@@ -35,6 +35,7 @@
         <h1>Result Summary</h1>
         <div class="stat">{{ session.correct_count }}/{{ session.total_questions }}</div>
         <p class="muted">Accuracy {{ session.accuracy_percentage }}% | Incorrect {{ session.incorrect_count }} | Skipped {{ session.skipped_count }}</p>
+        <p class="muted">Completion time: {{ session.completion_duration_label }}</p>
         {% if session.result %}
             <p>{{ session.result.summary }}</p>
         {% endif %}

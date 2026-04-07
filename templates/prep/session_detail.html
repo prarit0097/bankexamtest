@@ -3,6 +3,28 @@
 {% block title %}Test Session {{ session.pk }}{% endblock %}
 
 {% block content %}
+<style>
+    .test-timer-sticky {
+        position: sticky;
+        top: 12px;
+        z-index: 50;
+        margin-bottom: 14px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid rgba(13, 108, 96, 0.22);
+        background: rgba(255, 250, 241, 0.95);
+        box-shadow: 0 8px 22px rgba(43, 51, 46, 0.10);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+    .test-timer-value {
+        font-weight: 800;
+        font-size: 1.2rem;
+        color: var(--accent-deep);
+    }
+</style>
 <div class="panel">
     <div class="toolbar" style="margin-bottom: 16px;">
         <a class="button secondary" href="{% url 'prep:home' %}">Back to dashboard</a>
@@ -19,6 +41,15 @@
 
 <form method="post" action="{% url 'prep:submit-test' session.pk %}">
     {% csrf_token %}
+    <div
+        class="test-timer-sticky"
+        id="test-timer"
+        data-started-at="{{ session.started_at|date:'U' }}"
+        data-duration-minutes="{{ session.duration_minutes }}"
+    >
+        <span><strong>Test Timer</strong> (always visible while scrolling)</span>
+        <span class="test-timer-value" data-timer-value>{{ session.duration_minutes }}:00</span>
+    </div>
     {% for session_question in session.session_questions.all %}
         <div class="question">
             <h3>Q{{ session_question.position }}. {{ session_question.question.stem }}</h3>
@@ -32,4 +63,71 @@
     {% endfor %}
     <button type="submit">Submit test</button>
 </form>
+<script>
+    (function () {
+        const timerRoot = document.getElementById("test-timer");
+        if (!timerRoot) return;
+        const timerValue = timerRoot.querySelector("[data-timer-value]");
+        const form = document.querySelector('form[action$="/submit/"]');
+        if (!timerValue || !form) return;
+
+        const startedAt = Number(timerRoot.dataset.startedAt || 0);
+        const durationMinutes = Number(timerRoot.dataset.durationMinutes || 0);
+        const durationSeconds = Math.max(0, Math.floor(durationMinutes * 60));
+        if (!startedAt || !durationSeconds) return;
+
+        const deadlineMs = (startedAt + durationSeconds) * 1000;
+        let submittedByTimer = false;
+        let timerStopped = false;
+        let tickTimeoutId = null;
+        const submitButton = form.querySelector('button[type="submit"]');
+
+        function render(remainingSeconds) {
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+            timerValue.textContent = String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+        }
+
+        function getRemainingSeconds() {
+            const nowMs = Date.now();
+            return Math.max(0, Math.floor((deadlineMs - nowMs) / 1000));
+        }
+
+        function stopTimer() {
+            if (timerStopped) return;
+            timerStopped = true;
+            timerRoot.dataset.stopped = "1";
+            if (tickTimeoutId !== null) {
+                window.clearTimeout(tickTimeoutId);
+            }
+            render(getRemainingSeconds());
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = "Submitting...";
+            }
+        }
+
+        form.addEventListener("submit", function () {
+            stopTimer();
+        });
+
+        function tick() {
+            if (timerStopped) return;
+            const remaining = getRemainingSeconds();
+            render(remaining);
+            if (remaining <= 0) {
+                timerValue.textContent = "00:00";
+                if (!submittedByTimer) {
+                    submittedByTimer = true;
+                    stopTimer();
+                    form.submit();
+                }
+                return;
+            }
+            tickTimeoutId = window.setTimeout(tick, 1000);
+        }
+
+        tick();
+    })();
+</script>
 {% endblock %}

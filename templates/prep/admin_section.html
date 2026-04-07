@@ -26,7 +26,7 @@
 <section class="panel">
     <div class="section-title-row">
         <h2>{{ section_title }}</h2>
-        <span class="pill">{{ section_items|length }} recent records</span>
+        {% if page_obj %}<span class="pill">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} total)</span>{% endif %}
     </div>
     {% if section_items %}
         {% for item in section_items %}
@@ -65,6 +65,20 @@
                 {% endif %}
             </div>
         {% endfor %}
+
+        {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        <div class="toolbar" style="margin-top: 20px; justify-content: center;">
+            {% if page_obj.has_previous %}
+                <a class="button secondary" href="?page=1">First</a>
+                <a class="button secondary" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            {% endif %}
+            <span class="pill" style="align-self: center;">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a class="button secondary" href="?page={{ page_obj.next_page_number }}">Next</a>
+                <a class="button secondary" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+            {% endif %}
+        </div>
+        {% endif %}
     {% else %}
         <p class="muted">No records available in this section yet.</p>
     {% endif %}

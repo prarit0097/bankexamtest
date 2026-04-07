@@ -419,6 +419,21 @@ class TestSession(TimeStampedModel):
             return 0.0
         return round((self.correct_count / self.total_questions) * 100, 2)
 
+    @property
+    def completion_duration_seconds(self) -> int:
+        if not self.started_at or not self.submitted_at:
+            return 0
+        return max(0, int((self.submitted_at - self.started_at).total_seconds()))
+
+    @property
+    def completion_duration_label(self) -> str:
+        total_seconds = self.completion_duration_seconds
+        minutes, seconds = divmod(total_seconds, 60)
+        hours, minutes = divmod(minutes, 60)
+        if hours:
+            return f"{hours}h {minutes}m {seconds}s"
+        return f"{minutes}m {seconds}s"
+
 
 class TestSessionQuestion(TimeStampedModel):
     test_session = models.ForeignKey(

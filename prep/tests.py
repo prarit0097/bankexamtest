@@ -2,6 +2,7 @@ from datetime import timedelta
 import tempfile
 from unittest.mock import Mock, patch
 
+from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -27,7 +28,7 @@ from prep.services.assessment import create_test_session, submit_test_session
 from prep.services.ingestion import ingest_asset
 from prep.services.notifications import generate_daily_summary, send_daily_summary
 from prep.services.rag import get_best_explanation
-from prep.services.taxonomy import ensure_default_taxonomy
+from prep.services.taxonomy import ensure_default_taxonomy, reset_taxonomy_cache
 from prep.forms import TestCreationForm
 
 
@@ -39,8 +40,19 @@ from prep.forms import TestCreationForm
 )
 class PrepPlatformTests(TestCase):
     def setUp(self):
+        reset_taxonomy_cache()
         ensure_default_taxonomy()
         self.client = Client()
+        self.username = "chahat@gmail.com"
+        self.password = "Chahat@123"
+        user_model = get_user_model()
+        self.user, _ = user_model.objects.get_or_create(
+            username=self.username,
+            defaults={"email": self.username, "is_staff": True, "is_superuser": True},
+        )
+        self.user.set_password(self.password)
+        self.user.save()
+        self.client.force_login(self.user)
         self.exam = Exam.objects.get(code="IBPS-PO")
         self.section = self.exam.sections.first()
         self.topic = self.section.topics.first()
@@ -68,6 +80,25 @@ class PrepPlatformTests(TestCase):
         self.assertContains(response, "Open profile dashboard")
         self.assertContains(response, "Browse predicted papers")
         self.assertNotContains(response, "Telegram")
+
+    def test_login_page_accepts_default_credentials(self):
+        self.client.logout()
+        response = self.client.get(reverse("prep:login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Login")
+
+        post_response = self.client.post(
+            reverse("prep:login"),
+            {"username": self.username, "password": self.password},
+        )
+        self.assertEqual(post_response.status_code, 302)
+        self.assertEqual(post_response.headers["Location"], reverse("prep:home"))
+
+    def test_home_requires_authentication(self):
+        self.client.logout()
+        response = self.client.get(reverse("prep:home"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("prep:login"), response.url)
 
     def test_predicted_papers_page_loads(self):
         generate_response = self.client.post(reverse("prep:admin-panel"), {"action": "generate_predictions"})
@@ -277,6 +308,23 @@ class PrepPlatformTests(TestCase):
         self.assertEqual(asset.metadata["upload_category"], "study_material")
         self.assertTrue(asset.uploaded_file.name.endswith(".md"))
 
+    def test_admin_panel_rejects_legacy_doc_uploads(self):
+        upload = SimpleUploadedFile(
+            "legacy-notes.doc",
+            b"Legacy DOC binary placeholder",
+            content_type="application/msword",
+        )
+        response = self.client.post(
+            reverse("prep:admin-panel"),
+            {
+                "upload_action": "upload_study_material",
+                "title": "Legacy Notes",
+                "uploaded_files": [upload],
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Upload only PDF, TXT, MD, or DOCX files.")
+
     def test_admin_section_pages_are_accessible(self):
         for route_name in (
             "prep:admin-content-assets",
@@ -348,8 +396,10 @@ class PrepPlatformTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Overall Performance")
         self.assertContains(response, "Prediction-based tests: 1")
+        self.assertContains(response, "Average completion time")
         self.assertContains(response, self.topic.name)
         self.assertContains(response, "Recent Completed Tests")
+        self.assertContains(response, "Completion time:")
         self.assertContains(response, "Resume test")
         self.assertContains(response, str(in_progress.pk))
         self.assertNotContains(response, "Telegram")
@@ -523,6 +573,9 @@ class PrepPlatformTests(TestCase):
         self.assertContains(detail, "Start New Test")
         self.assertContains(detail, "Profile")
         self.assertContains(detail, "Admin Panel")
+        self.assertContains(detail, "Test Timer")
+        self.assertContains(detail, "always visible while scrolling")
+        self.assertContains(detail, "data-duration-minutes")
         self.assertNotContains(detail, "Telegram")
 
         answers = {}
@@ -537,6 +590,7 @@ class PrepPlatformTests(TestCase):
         self.assertContains(result, "Profile")
         self.assertContains(result, "Admin Panel")
         self.assertContains(result, "Result Summary")
+        self.assertContains(result, "Completion time:")
         self.assertContains(result, "Back to dashboard")
         self.assertContains(result, "Start similar test again")
         self.assertContains(result, "View profile")

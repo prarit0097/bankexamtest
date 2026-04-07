@@ -113,18 +113,18 @@ class AdminAssetUploadForm(forms.Form):
         required=False,
         help_text="Optional. Leave blank to use the uploaded filename as the title.",
     )
-    uploaded_files = MultipleFileField(help_text="Upload one or many PDF, TXT, MD, DOC, or DOCX documents.")
+    uploaded_files = MultipleFileField(help_text="Upload one or many PDF, TXT, MD, or DOCX documents.")
 
     def __init__(self, *args, upload_label="Upload file", **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["uploaded_files"].label = upload_label
-        self.fields["uploaded_files"].help_text = "You can upload 1 file or 50+ files together, including Markdown (.md) files."
+        self.fields["uploaded_files"].help_text = "You can upload 1 file or 50+ files together, including Markdown (.md) and DOCX files."
 
     def clean_uploaded_files(self):
         uploaded_files = self.cleaned_data["uploaded_files"]
-        allowed = {".pdf", ".txt", ".md", ".doc", ".docx"}
+        allowed = {".pdf", ".txt", ".md", ".docx"}
         for uploaded_file in uploaded_files:
             suffix = Path(uploaded_file.name).suffix.lower()
             if suffix not in allowed:
-                raise ValidationError("Upload only PDF, TXT, MD, DOC, or DOCX files.")
+                raise ValidationError("Upload only PDF, TXT, MD, or DOCX files.")
         return uploaded_files

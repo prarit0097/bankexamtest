@@ -104,10 +104,11 @@ def create_test_session(
 
 
 @transaction.atomic
-def submit_test_session(session, answers_by_question_id):
+def submit_test_session(session, answers_by_question_id, submitted_at=None):
     if session.status == TestStatus.SUBMITTED:
         return session
 
+    final_submitted_at = submitted_at or timezone.now()
     correct_count = 0
     incorrect_count = 0
     skipped_count = 0
@@ -133,7 +134,7 @@ def submit_test_session(session, answers_by_question_id):
             defaults={
                 "selected_option": selected_option,
                 "is_correct": is_correct,
-                "answered_at": timezone.now() if selected_option else None,
+                "answered_at": final_submitted_at if selected_option else None,
             },
         )
 
@@ -168,7 +169,7 @@ def submit_test_session(session, answers_by_question_id):
     session.skipped_count = skipped_count
     session.score = Decimal(str(correct_count))
     session.status = TestStatus.SUBMITTED
-    session.submitted_at = timezone.now()
+    session.submitted_at = final_submitted_at
     session.save(
         update_fields=[
             "correct_count",

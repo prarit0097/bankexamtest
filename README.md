@@ -31,6 +31,16 @@ python manage.py seed_exam_taxonomy
 python manage.py runserver
 ```
 
+Default app login after migrations:
+- Username: `chahat@gmail.com`
+- Password: `Chahat@123`
+
+If you want background ingestion to process queued uploads, run a Celery worker:
+
+```bash
+celery -A config worker -l info
+```
+
 ## Key flows
 
 1. Home page lets a student start a mock or topic-wise test.

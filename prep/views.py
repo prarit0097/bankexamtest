@@ -1,7 +1,11 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView, LogoutView
+from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils import timezone
 from django.views.generic import DetailView, FormView, TemplateView
 
 from prep.forms import AdminAssetUploadForm, StudentNameForm, TestCreationForm
@@ -29,7 +33,19 @@ from prep.services import (
 )
 
 
-class HomeView(TemplateView):
+class AppLoginView(LoginView):
+    template_name = "prep/login.html"
+    redirect_authenticated_user = True
+
+    def get_success_url(self):
+        return self.get_redirect_url() or reverse("prep:home")
+
+
+class AppLogoutView(LogoutView):
+    next_page = "prep:login"
+
+
+class HomeView(LoginRequiredMixin, TemplateView):
     template_name = "prep/home.html"
 
     def get_context_data(self, **kwargs):
@@ -55,7 +71,7 @@ class HomeView(TemplateView):
         return context
 
 
-class PredictedPapersView(TemplateView):
+class PredictedPapersView(LoginRequiredMixin, TemplateView):
     template_name = "prep/predicted_papers.html"
 
     def get_context_data(self, **kwargs):
@@ -63,10 +79,11 @@ class PredictedPapersView(TemplateView):
         context = super().get_context_data(**kwargs)
         prediction_sets = PredictionSet.objects.select_related("exam", "section", "topic").order_by("-generated_for", "-created_at")
         context["prediction_sets"] = prediction_sets
+        context["covered_exams_count"] = prediction_sets.values("exam_id").distinct().count()
         return context
 
 
-class PredictedPaperDetailView(DetailView):
+class PredictedPaperDetailView(LoginRequiredMixin, DetailView):
     model = PredictionSet
     template_name = "prep/predicted_paper_detail.html"
     context_object_name = "prediction"
@@ -89,7 +106,7 @@ class PredictedPaperDetailView(DetailView):
         return context
 
 
-class AdminPanelView(TemplateView):
+class AdminPanelView(LoginRequiredMixin, TemplateView):
     template_name = "prep/admin_panel.html"
     http_method_names = ["get", "post"]
 
@@ -146,11 +163,11 @@ class AdminPanelView(TemplateView):
             batch = result["batch"]
             assets = result["assets"]
             first_asset = assets[0] if assets else None
-            inferred_exam = first_asset.metadata.get("inferred_exam_name", "Unknown exam") if first_asset else "Unknown exam"
-            inferred_year = first_asset.metadata.get("document_year") or "Unknown year" if first_asset else "Unknown year"
+            inferred_exam = first_asset.metadata.get("inferred_exam_name", "Pending scan") if first_asset else "Pending scan"
+            inferred_year = first_asset.metadata.get("document_year") or "Pending scan" if first_asset else "Pending scan"
             messages.success(
                 request,
-                f"Uploaded {len(assets)} file(s) in batch '{batch.label}'. Primary inferred exam: {inferred_exam}. Primary inferred year: {inferred_year}.",
+                f"Uploaded {len(assets)} file(s) in batch '{batch.label}'. Ingestion is running in background. Primary inferred exam: {inferred_exam}. Primary inferred year: {inferred_year}.",
             )
             return redirect("prep:admin-panel")
 
@@ -198,85 +215,85 @@ class AdminPanelView(TemplateView):
         return redirect("prep:admin-panel")
 
 
-class AdminContentAssetsView(TemplateView):
+class PaginatedAdminSectionView(LoginRequiredMixin, TemplateView):
     template_name = "prep/admin_section.html"
+    paginate_by = 25
+    section_title = ""
+    section_intro = ""
+    item_type = ""
+
+    def get_section_queryset(self):
+        raise NotImplementedError
 
     def get_context_data(self, **kwargs):
         ensure_default_taxonomy()
         context = super().get_context_data(**kwargs)
-        context["section_title"] = "Content Assets"
-        context["section_intro"] = "Review uploads, ingestion status, and manage content visibility from this in-app control view."
-        context["section_items"] = ContentAsset.objects.select_related("exam").order_by("-created_at")[:25]
-        context["item_type"] = "content"
+        paginator = Paginator(self.get_section_queryset(), self.paginate_by)
+        page_number = self.request.GET.get("page", 1)
+        page_obj = paginator.get_page(page_number)
+        context["section_title"] = self.section_title
+        context["section_intro"] = self.section_intro
+        context["section_items"] = page_obj
+        context["page_obj"] = page_obj
+        context["item_type"] = self.item_type
         return context
 
 
-class AdminQuestionBankView(TemplateView):
-    template_name = "prep/admin_section.html"
+class AdminContentAssetsView(PaginatedAdminSectionView):
+    section_title = "Content Assets"
+    section_intro = "Review uploads, ingestion status, and manage content visibility from this in-app control view."
+    item_type = "content"
 
-    def get_context_data(self, **kwargs):
-        ensure_default_taxonomy()
-        context = super().get_context_data(**kwargs)
-        context["section_title"] = "Question Bank"
-        context["section_intro"] = "Inspect approved/generated questions, difficulty, and source coverage."
-        context["section_items"] = Question.objects.select_related("exam", "section", "topic").order_by("-created_at")[:30]
-        context["item_type"] = "question"
-        return context
+    def get_section_queryset(self):
+        return ContentAsset.objects.select_related("exam").order_by("-created_at")
 
 
-class AdminPredictionSetsView(TemplateView):
-    template_name = "prep/admin_section.html"
+class AdminQuestionBankView(PaginatedAdminSectionView):
+    section_title = "Question Bank"
+    section_intro = "Inspect approved/generated questions, difficulty, and source coverage."
+    item_type = "question"
 
-    def get_context_data(self, **kwargs):
-        ensure_default_taxonomy()
-        context = super().get_context_data(**kwargs)
-        context["section_title"] = "Prediction Sets"
-        context["section_intro"] = "Open recent likely-question practice sets and check exam coverage."
-        context["section_items"] = PredictionSet.objects.select_related("exam", "section", "topic").order_by("-generated_for", "-created_at")[:25]
-        context["item_type"] = "prediction"
-        return context
+    def get_section_queryset(self):
+        return Question.objects.select_related("exam", "section", "topic").order_by("-created_at")
 
 
-class AdminTestSessionsView(TemplateView):
-    template_name = "prep/admin_section.html"
+class AdminPredictionSetsView(PaginatedAdminSectionView):
+    section_title = "Prediction Sets"
+    section_intro = "Open recent likely-question practice sets and check exam coverage."
+    item_type = "prediction"
 
-    def get_context_data(self, **kwargs):
-        ensure_default_taxonomy()
-        context = super().get_context_data(**kwargs)
-        context["section_title"] = "Test Sessions"
-        context["section_intro"] = "Track active and submitted tests, score patterns, and question load."
-        context["section_items"] = TestSession.objects.select_related("exam", "section", "topic").order_by("-started_at")[:30]
-        context["item_type"] = "session"
-        return context
+    def get_section_queryset(self):
+        return PredictionSet.objects.select_related("exam", "section", "topic").order_by("-generated_for", "-created_at")
 
 
-class AdminDeliveryLogsView(TemplateView):
-    template_name = "prep/admin_section.html"
+class AdminTestSessionsView(PaginatedAdminSectionView):
+    section_title = "Test Sessions"
+    section_intro = "Track active and submitted tests, score patterns, and question load."
+    item_type = "session"
 
-    def get_context_data(self, **kwargs):
-        ensure_default_taxonomy()
-        context = super().get_context_data(**kwargs)
-        context["section_title"] = "Delivery Logs"
-        context["section_intro"] = "Review outbound report delivery status and failure reasons."
-        context["section_items"] = TelegramDeliveryLog.objects.select_related("telegram_link").order_by("-report_date", "-created_at")[:30]
-        context["item_type"] = "delivery"
-        return context
+    def get_section_queryset(self):
+        return TestSession.objects.select_related("exam", "section", "topic").order_by("-started_at")
 
 
-class AdminIngestionLogsView(TemplateView):
-    template_name = "prep/admin_section.html"
+class AdminDeliveryLogsView(PaginatedAdminSectionView):
+    section_title = "Delivery Logs"
+    section_intro = "Review outbound report delivery status and failure reasons."
+    item_type = "delivery"
 
-    def get_context_data(self, **kwargs):
-        ensure_default_taxonomy()
-        context = super().get_context_data(**kwargs)
-        context["section_title"] = "Ingestion Logs"
-        context["section_intro"] = "Inspect ingestion outcomes, chunk counts, and error messages."
-        context["section_items"] = IngestionLog.objects.select_related("asset").order_by("-created_at")[:30]
-        context["item_type"] = "ingestion"
-        return context
+    def get_section_queryset(self):
+        return TelegramDeliveryLog.objects.select_related("telegram_link").order_by("-report_date", "-created_at")
 
 
-class ProfileView(TemplateView):
+class AdminIngestionLogsView(PaginatedAdminSectionView):
+    section_title = "Ingestion Logs"
+    section_intro = "Inspect ingestion outcomes, chunk counts, and error messages."
+    item_type = "ingestion"
+
+    def get_section_queryset(self):
+        return IngestionLog.objects.select_related("asset").order_by("-created_at")
+
+
+class ProfileView(LoginRequiredMixin, TemplateView):
     template_name = "prep/profile.html"
     http_method_names = ["get", "post"]
 
@@ -300,12 +317,16 @@ class ProfileView(TemplateView):
         return self.render_to_response(self.get_context_data(name_form=form))
 
 
-class StartTestView(FormView):
+class StartTestView(LoginRequiredMixin, FormView):
     form_class = TestCreationForm
     template_name = "prep/home.html"
     http_method_names = ["post"]
 
     def form_valid(self, form):
+        last_session = TestSession.objects.order_by("-started_at").first()
+        if last_session and (timezone.now() - last_session.started_at).total_seconds() < 5:
+            messages.warning(self.request, "Please wait a few seconds before starting another test.")
+            return redirect("prep:home")
         session = create_test_session(
             exam=form.cleaned_data["exam"],
             mode=form.cleaned_data["mode"],
@@ -324,7 +345,7 @@ class StartTestView(FormView):
         return self.render_to_response(self.get_context_data(form=form))
 
 
-class TestSessionDetailView(DetailView):
+class TestSessionDetailView(LoginRequiredMixin, DetailView):
     model = TestSession
     template_name = "prep/session_detail.html"
     context_object_name = "session"
@@ -338,7 +359,7 @@ class TestSessionDetailView(DetailView):
         ).prefetch_related("session_questions__question__options")
 
 
-class SubmitTestView(DetailView):
+class SubmitTestView(LoginRequiredMixin, DetailView):
     model = TestSession
     http_method_names = ["post"]
 
@@ -352,12 +373,12 @@ class SubmitTestView(DetailView):
             for key, value in request.POST.items()
             if key.startswith("question_")
         }
-        submit_test_session(session, answers_by_question_id)
+        submit_test_session(session, answers_by_question_id, submitted_at=timezone.now())
         messages.success(request, "Test submitted successfully.")
         return redirect("prep:result", pk=session.pk)
 
 
-class TestResultView(DetailView):
+class TestResultView(LoginRequiredMixin, DetailView):
     model = TestSession
     template_name = "prep/result.html"
     context_object_name = "session"

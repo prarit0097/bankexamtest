@@ -1,10 +1,14 @@
 import json
 import math
 import re
+import time
 from typing import Iterable
 
 from django.conf import settings
 from openai import OpenAI
+
+_last_api_call_time = 0.0
+_MIN_API_INTERVAL = 1.0
 
 
 def get_client():
@@ -23,11 +27,21 @@ def _extract_json_block(raw_text: str):
     return None
 
 
+def _throttle():
+    global _last_api_call_time
+    now = time.monotonic()
+    elapsed = now - _last_api_call_time
+    if elapsed < _MIN_API_INTERVAL:
+        time.sleep(_MIN_API_INTERVAL - elapsed)
+    _last_api_call_time = time.monotonic()
+
+
 def generate_json(prompt: str):
     client = get_client()
     if client is None:
         return None
 
+    _throttle()
     try:
         response = client.responses.create(
             model=settings.OPENAI_MODEL,
@@ -51,6 +65,7 @@ def embed_texts(texts: Iterable[str]) -> list[list[float]]:
     if client is None:
         return [_naive_embedding(text) for text in clean_texts]
 
+    _throttle()
     try:
         response = client.embeddings.create(
             model=settings.OPENAI_EMBEDDING_MODEL,
@@ -72,9 +87,13 @@ def cosine_similarity(first: list[float], second: list[float]) -> float:
     return numerator / (first_norm * second_norm)
 
 
+EMBEDDING_DIMENSIONS = 1536
+
+
 def _naive_embedding(text: str) -> list[float]:
-    buckets = [0.0] * 12
+    buckets = [0.0] * EMBEDDING_DIMENSIONS
     for index, token in enumerate(re.findall(r"[a-z0-9]+", text.lower())):
         bucket = index % len(buckets)
         buckets[bucket] += float((len(token) % 7) + 1)
-    return buckets
+    norm = math.sqrt(sum(v * v for v in buckets)) or 1.0
+    return [v / norm for v in buckets]

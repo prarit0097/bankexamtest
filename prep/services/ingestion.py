@@ -1,8 +1,16 @@
-from pathlib import Path
+import logging
 from collections import Counter
+from io import BytesIO
+from pathlib import Path
+import threading
+from zipfile import ZipFile
+from xml.etree import ElementTree
 
 import requests
+from django.db import close_old_connections
 from pypdf import PdfReader
+
+logger = logging.getLogger("prep.ingestion")
 
 from prep.models import ContentAsset, ContentAssetType, CorpusChunk, Exam, IngestionLog, IngestionStatus, Question, UploadBatch
 from prep.services.ai_client import embed_texts, generate_json
@@ -46,6 +54,7 @@ def ingest_asset(asset: ContentAsset):
         )
         asset.ingestion_status = IngestionStatus.COMPLETE
         asset.save(update_fields=["ingestion_status", "updated_at"])
+        _refresh_upload_batch(asset.upload_batch_id)
         return len(chunks)
     except Exception as exc:
         IngestionLog.objects.create(
@@ -56,16 +65,33 @@ def ingest_asset(asset: ContentAsset):
         )
         asset.ingestion_status = IngestionStatus.FAILED
         asset.save(update_fields=["ingestion_status", "updated_at"])
+        _refresh_upload_batch(asset.upload_batch_id)
         raise
 
 
 def _extract_text(asset: ContentAsset):
     if asset.uploaded_file:
         suffix = Path(asset.uploaded_file.name).suffix.lower()
+        asset.uploaded_file.open("rb")
+        try:
+            raw_bytes = asset.uploaded_file.read()
+        finally:
+            asset.uploaded_file.close()
         if suffix == ".pdf":
-            reader = PdfReader(asset.uploaded_file)
-            return "\n".join(page.extract_text() or "" for page in reader.pages)
-        return asset.uploaded_file.read().decode("utf-8", errors="ignore")
+            reader = PdfReader(BytesIO(raw_bytes))
+            text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            if not text.strip():
+                logger.warning(
+                    "PDF '%s' extracted empty text. This may be a scanned/image-only PDF "
+                    "that requires OCR (not currently supported).",
+                    asset.title or asset.uploaded_file.name,
+                )
+            return text
+        if suffix == ".docx":
+            return _extract_docx_text(raw_bytes)
+        if suffix == ".doc":
+            raise ValueError("Legacy .doc files are not supported. Convert the file to .docx and re-upload.")
+        return raw_bytes.decode("utf-8", errors="ignore")
 
     if asset.source_url:
         response = requests.get(asset.source_url, timeout=10)
@@ -102,6 +128,14 @@ def build_content_assets_from_uploads(*, upload_category: str, uploaded_files, t
         summary={},
     )
 
+    batch.processed_files = 0
+    batch.status = IngestionStatus.PROCESSING if uploaded_files else IngestionStatus.PENDING
+    batch.summary = {
+        "queue_notice": "Files queued for asynchronous ingestion. Large batches process in the background.",
+        "queued_files": len(uploaded_files),
+    }
+    batch.save(update_fields=["processed_files", "status", "summary", "updated_at"])
+
     created_assets = []
     for index, uploaded_file in enumerate(uploaded_files, start=1):
         asset = _create_asset_for_upload(
@@ -111,14 +145,10 @@ def build_content_assets_from_uploads(*, upload_category: str, uploaded_files, t
             upload_batch=batch,
             index=index,
         )
-        ingest_asset(asset)
-        asset.refresh_from_db()
         created_assets.append(asset)
+        _queue_asset_ingestion(asset.id)
 
-    batch.processed_files = len(created_assets)
-    batch.status = IngestionStatus.COMPLETE if created_assets else IngestionStatus.PENDING
-    batch.summary = summarize_upload_batch(batch, created_assets)
-    batch.save(update_fields=["processed_files", "status", "summary", "updated_at"])
+    batch.refresh_from_db()
 
     return {"batch": batch, "assets": created_assets}
 
@@ -251,30 +281,30 @@ def get_upload_category_count(upload_category: str):
 def _resolve_asset_type(upload_category: str, filename: str):
     suffix = Path(filename).suffix.lower()
     if upload_category == "study_material":
-        return ContentAssetType.BOOK if suffix in {".pdf", ".doc", ".docx"} else ContentAssetType.UPLOAD
+        return ContentAssetType.BOOK if suffix in {".pdf", ".docx"} else ContentAssetType.UPLOAD
     return ContentAssetType.PAPER
 
 
 def _get_assets_for_category(upload_category: str):
-    assets = list(ContentAsset.objects.all())
-    matched_ids = [asset.id for asset in assets if _asset_matches_category(asset, upload_category)]
-    return ContentAsset.objects.filter(id__in=matched_ids)
+    from django.db.models import Q
 
-
-def _asset_matches_category(asset: ContentAsset, upload_category: str) -> bool:
-    explicit_category = asset.metadata.get("upload_category")
-    if explicit_category:
-        return explicit_category == upload_category
+    explicit_match = Q(metadata__upload_category=upload_category)
 
     if upload_category == "previous_year_paper":
-        return asset.asset_type == ContentAssetType.PAPER
-    if upload_category == "test_paper":
-        title = (asset.title or "").lower()
-        notes = (asset.source_notes or "").lower()
-        return "mock" in title or "test paper" in title or "mock" in notes or "test paper" in notes
-    if upload_category == "study_material":
-        return asset.asset_type in {ContentAssetType.BOOK, ContentAssetType.PDF, ContentAssetType.UPLOAD}
-    return False
+        legacy_match = Q(asset_type=ContentAssetType.PAPER) & ~Q(metadata__has_key="upload_category")
+    elif upload_category == "test_paper":
+        legacy_match = (
+            Q(title__icontains="mock") | Q(title__icontains="test paper")
+            | Q(source_notes__icontains="mock") | Q(source_notes__icontains="test paper")
+        ) & ~Q(metadata__has_key="upload_category")
+    elif upload_category == "study_material":
+        legacy_match = Q(
+            asset_type__in=[ContentAssetType.BOOK, ContentAssetType.PDF, ContentAssetType.UPLOAD]
+        ) & ~Q(metadata__has_key="upload_category")
+    else:
+        legacy_match = Q(pk__in=[])
+
+    return ContentAsset.objects.filter(explicit_match | legacy_match)
 
 
 def _infer_year(content: str):
@@ -367,3 +397,88 @@ def _infer_via_ai(asset: ContentAsset, text: str):
     )
     payload = generate_json(prompt)
     return payload if isinstance(payload, dict) else None
+
+
+def _extract_docx_text(raw_bytes):
+    with ZipFile(BytesIO(raw_bytes)) as docx_zip:
+        xml_payload = docx_zip.read("word/document.xml")
+    root = ElementTree.fromstring(xml_payload)
+    parts = []
+    for node in root.iter():
+        if node.tag.endswith("}t") and node.text:
+            parts.append(node.text)
+        if node.tag.endswith("}p"):
+            parts.append("\n")
+    return "".join(parts).strip()
+
+
+def _queue_asset_ingestion(asset_id: int):
+    from prep.tasks import ingest_content_asset
+
+    try:
+        ingest_content_asset.delay(asset_id)
+    except Exception:
+        _run_ingestion_thread(asset_id)
+
+
+def _refresh_upload_batch(batch_id):
+    if not batch_id:
+        return
+    batch = UploadBatch.objects.filter(id=batch_id).first()
+    if not batch:
+        return
+
+    assets = list(ContentAsset.objects.filter(upload_batch=batch).order_by("id"))
+    terminal_statuses = {IngestionStatus.COMPLETE, IngestionStatus.FAILED}
+    processed_files = sum(1 for asset in assets if asset.ingestion_status in terminal_statuses)
+    failed_files = sum(1 for asset in assets if asset.ingestion_status == IngestionStatus.FAILED)
+
+    if processed_files == 0 and assets:
+        status = IngestionStatus.PROCESSING
+    elif processed_files < len(assets):
+        status = IngestionStatus.PROCESSING
+    elif failed_files:
+        status = IngestionStatus.FAILED
+    else:
+        status = IngestionStatus.COMPLETE
+
+    summary = summarize_upload_batch(batch, assets)
+    summary["processed_files"] = processed_files
+    summary["failed_files"] = failed_files
+    batch.processed_files = processed_files
+    batch.status = status
+    batch.summary = summary
+    batch.save(update_fields=["processed_files", "status", "summary", "updated_at"])
+
+
+def _run_ingestion_thread(asset_id: int, max_retries: int = 3):
+    import time
+
+    def runner():
+        close_old_connections()
+        try:
+            asset = ContentAsset.objects.filter(id=asset_id).first()
+            if not asset:
+                logger.warning("Ingestion thread: asset %s not found, skipping.", asset_id)
+                return
+            last_error = None
+            for attempt in range(1, max_retries + 1):
+                try:
+                    ingest_asset(asset)
+                    return
+                except Exception as exc:
+                    last_error = exc
+                    logger.warning(
+                        "Ingestion thread: asset %s attempt %d/%d failed: %s",
+                        asset_id, attempt, max_retries, exc,
+                    )
+                    if attempt < max_retries:
+                        time.sleep(2 ** attempt)
+            logger.error(
+                "Ingestion thread: asset %s failed after %d attempts: %s",
+                asset_id, max_retries, last_error,
+            )
+        finally:
+            close_old_connections()
+
+    threading.Thread(target=runner, daemon=True).start()

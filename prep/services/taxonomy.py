@@ -67,8 +67,20 @@ MAJOR_BANKING_TAXONOMY = [
 ]
 
 
+_taxonomy_seeded = False
+
+
+def reset_taxonomy_cache():
+    global _taxonomy_seeded
+    _taxonomy_seeded = False
+
+
 def ensure_default_taxonomy():
+    global _taxonomy_seeded
+    if _taxonomy_seeded:
+        return
     if Exam.objects.exists():
+        _taxonomy_seeded = True
         return
 
     for exam_index, exam_data in enumerate(MAJOR_BANKING_TAXONOMY, start=1):
@@ -94,3 +106,4 @@ def ensure_default_taxonomy():
                     is_high_priority=topic_name in topics[:2],
                     description=f"{topic_name} practice for {exam.name}",
                 )
+    _taxonomy_seeded = True

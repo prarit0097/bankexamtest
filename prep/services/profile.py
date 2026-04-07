@@ -30,6 +30,8 @@ def build_profile_dashboard(chat_id=None):
     average_accuracy = round(
         sum(session.accuracy_percentage for session in completed_sessions) / total_completed, 2
     ) if total_completed else 0.0
+    completion_durations = [session.completion_duration_seconds for session in completed_sessions if session.completion_duration_seconds]
+    average_completion_seconds = int(sum(completion_durations) / len(completion_durations)) if completion_durations else 0
     completion_rate = _safe_percentage(total_completed, total_started)
     best_accuracy = max((session.accuracy_percentage for session in completed_sessions), default=0.0)
     prediction_tests = sum(1 for session in completed_sessions if session.metadata.get("use_prediction"))
@@ -69,6 +71,7 @@ def build_profile_dashboard(chat_id=None):
         "total_skipped": total_skipped,
         "overall_accuracy": overall_accuracy,
         "average_accuracy": average_accuracy,
+        "average_completion_time": _format_duration(average_completion_seconds),
         "best_accuracy": best_accuracy,
         "prediction_tests": prediction_tests,
         "current_streak": streak_summary["current_streak"],
@@ -216,3 +219,13 @@ def _build_opportunities(weak_counter, overall_accuracy, total_incorrect):
             }
         )
     return opportunities[:4]
+
+
+def _format_duration(total_seconds):
+    if not total_seconds:
+        return "0m 0s"
+    minutes, seconds = divmod(int(total_seconds), 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours}h {minutes}m {seconds}s"
+    return f"{minutes}m {seconds}s"

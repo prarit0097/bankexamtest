@@ -40,6 +40,13 @@ Ye ek web app hai jahan student test de sakta hai aur app usko result, explanati
 ## Project Kya Karta Hai
 Project ek online test platform banata hai jo banking exam students ke liye useful hai.
 
+### Access Rule (Naya)
+Ab app me login required hai. Bina login student/admin pages open nahi hongi.
+Default seeded login:
+
+- Username: `chahat@gmail.com`
+- Password: `Chahat@123`
+
 Student:
 - mock test de sakta hai
 - topic-wise test de sakta hai
@@ -99,6 +106,7 @@ Student side par ye major cheezein hoti hain:
 ### 1. Mock Test
 Ye full practice test hota hai.
 Student ko lagta hai jaise real exam jaisa test de raha hai.
+Test chalne ke dauran live timer dikhta rehta hai, aur scroll karne par bhi timer sticky visible rehta hai.
 
 ### 2. Topic-wise Test
 Agar student ko sirf ek topic practice karna hai, to vo topic-wise test le sakta hai.
@@ -117,6 +125,7 @@ App batata hai:
 - correct count
 - incorrect count
 - skipped count
+- test completion time (kitne time me test submit hua)
 
 ### 5. Explanation
 Agar answer galat hai to app reason explain karta hai.
@@ -381,6 +390,9 @@ Jaise:
 ### Redis
 Celery ke saath queue/broker ki tarah use hota hai.
 
+Important:
+Large uploads ab background me queue hoti hain. Real async processing ke liye Celery worker run hona chahiye.
+
 ### PostgreSQL
 Production database target.
 
@@ -456,6 +468,12 @@ python manage.py seed_exam_taxonomy
 python manage.py runserver
 ```
 
+### 5.1 Login karo
+App open karne ke baad login page par default credentials use karo:
+
+- Username: `chahat@gmail.com`
+- Password: `Chahat@123`
+
 ### 6. Tests chalao
 ```bash
 python manage.py test prep
@@ -469,6 +487,11 @@ python manage.py generate_prediction_sets
 ### 8. Django health check
 ```bash
 python manage.py check
+```
+
+### 9. Background ingestion worker (recommended)
+```bash
+celery -A config worker -l info
 ```
 
 ---
@@ -587,3 +610,25 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Predicted paper detail ko real-paper style me improve kiya gaya: section grouping, full question list, likely answer highlighting, aur weak placeholder `[AI Practice]` items ko filter karne ki logic add ki gayi
 - Old generated placeholder stems ko bhi predicted paper detail view se explicitly hide kiya gaya, taki purane stored sets me bhi fake-looking questions na dikhen
 - Bulk uploads ke liye Django upload limits raise ki gayi, taki 135 jaise large multi-file uploads `TooManyFilesSent` error na den
+
+### 2026-04-07
+- App-wide login system add kiya gaya; unauthenticated user ab protected pages access nahi kar sakta
+- Default seeded login user add kiya gaya: `chahat@gmail.com` / `Chahat@123`
+- Upload ingestion ko request path se hata kar async task queue par shift kiya gaya, taki large uploads UI request ko block na karein
+- Upload validation tighten ki gayi: `.docx` supported, legacy `.doc` reject hoti hai (convert to `.docx`)
+- Ingestion layer me real `.docx` text extraction add ki gayi (`word/document.xml` parsing)
+- `OPENAI_MODEL` default mismatch fix kiya gaya (`settings.py` aur `.env.example` aligned to `gpt-4o-mini`)
+- Predicted Papers page par `Exams covered` metric ko unique exam count par correct kiya gaya
+- Test session page me live sticky countdown timer add kiya gaya jo scroll ke dauran bhi visible rehta hai
+- Timer zero hone par test auto-submit behavior add kiya gaya
+- Student `Submit test` click karte hi timer immediately freeze hota hai, taaki completion time submit moment se clearly capture ho
+- Result Summary me test completion time show kiya gaya
+- Profile dashboard me average completion time aur each recent completed test ka completion time show kiya gaya
+- `_get_assets_for_category` ko DB-level queryset filtering par optimize kiya gaya; ab saare assets memory me load nahi hote, sirf matching records database se aate hain
+- Thread-based ingestion fallback me retry mechanism add kiya gaya (3 attempts with exponential backoff); failures ab properly log hote hain
+- Admin section views me pagination add ki gayi (25 items per page); First/Previous/Next/Last navigation controls ke saath
+- `_naive_embedding` ko 1536 dimensions par upgrade kiya gaya taaki OpenAI embedding dimensions ke saath compatible ho; output ab L2-normalized hota hai
+- PDF text extraction me empty text warning log add kiya gaya; scanned/image-only PDFs ka OCR gap clearly logged hota hai
+- `ensure_default_taxonomy()` me in-memory cache add kiya gaya taaki har request par unnecessary DB query na ho; test suite me cache reset logic bhi add ki gayi
+- OpenAI API calls me 1-second throttle add kiya gaya taaki rapid-fire requests se rate limit hit na ho
+- Test creation me 5-second cooldown add kiya gaya taaki accidental double-click se duplicate sessions na bane

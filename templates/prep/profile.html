@@ -71,6 +71,10 @@
                         <div class="kicker">Prediction Tests</div>
                         <div class="stat">{{ profile.prediction_tests }}</div>
                     </div>
+                    <div>
+                        <div class="kicker">Avg Completion</div>
+                        <div class="stat">{{ profile.average_completion_time }}</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -95,6 +99,7 @@
         <p>Average accuracy: {{ profile.average_accuracy }}%</p>
         <p>Best accuracy: {{ profile.best_accuracy }}%</p>
         <p>Questions solved: {{ profile.total_questions }}</p>
+        <p>Average completion time: {{ profile.average_completion_time }}</p>
     </div>
     <div class="mini-card">
         <div class="kicker">Consistency</div>
@@ -200,6 +205,7 @@
                     <h3>{{ test.exam.name }} | {{ test.get_mode_display }}</h3>
                     <p class="muted">{{ test.submitted_at|date:"d M Y, h:i A" }}</p>
                     <p>Score: {{ test.correct_count }}/{{ test.total_questions }} | Accuracy: {{ test.accuracy_percentage }}%</p>
+                    <p>Completion time: {{ test.completion_duration_label }}</p>
                     {% if test.topic %}
                         <p>Topic focus: {{ test.topic.name }}</p>
                     {% elif test.section %}

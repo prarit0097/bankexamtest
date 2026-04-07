@@ -6,6 +6,8 @@ from prep import views
 app_name = "prep"
 
 urlpatterns = [
+    path("login/", views.AppLoginView.as_view(), name="login"),
+    path("logout/", views.AppLogoutView.as_view(), name="logout"),
     path("", views.HomeView.as_view(), name="home"),
     path("predicted-papers/", views.PredictedPapersView.as_view(), name="predicted-papers"),
     path("predicted-papers/<int:pk>/", views.PredictedPaperDetailView.as_view(), name="predicted-paper-detail"),
