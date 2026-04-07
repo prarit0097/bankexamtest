@@ -49,7 +49,7 @@
     </div>
     {% if prediction_items %}
         {% for section in paper_sections %}
-            <div class="question" style="background: rgba(13,108,96,.06);">
+            <div class="question" style="background: rgba(13,108,96,.06); border-left: 4px solid var(--accent);">
                 <h2 style="margin-bottom: 4px;">{{ section.name }}</h2>
                 <p class="muted">{{ section.items|length }} predicted question(s) in this section</p>
             </div>
@@ -57,12 +57,12 @@
                 <div class="question">
                     <h3>Q{{ index }}. {{ item.question.stem }}</h3>
                     <p class="muted">
-                        Prediction score: {{ item.score|floatformat:2 }}
-                        {% if item.question.topic %} | {{ item.question.topic.name }}{% endif %}
-                        | {{ item.question.get_difficulty_display }}
+                        {% if item.question.topic %}{{ item.question.topic.name }} | {% endif %}
+                        {{ item.question.get_difficulty_display }}
+                        | Score: {{ item.score|floatformat:1 }}
                     </p>
                     {% for option in item.question.options.all %}
-                        <p>
+                        <p{% if option.is_correct %} style="background: rgba(24,121,78,.08); padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(24,121,78,.25);"{% endif %}>
                             <strong>{{ forloop.counter|stringformat:"s" }}.</strong>
                             {{ option.text }}
                             {% if option.is_correct %}<span class="pill" style="margin-left: 8px;">Likely answer</span>{% endif %}
@@ -72,7 +72,10 @@
             {% endfor %}
         {% endfor %}
     {% else %}
-        <p class="muted">High-quality predicted questions are not ready for this paper yet. Upload more real papers/test papers/study materials so the prediction engine can build a stronger paper.</p>
+        <div class="question" style="text-align: center; padding: 32px;">
+            <h3>No predicted questions yet</h3>
+            <p class="muted">Go to <a href="{% url 'prep:admin-panel' %}">Admin Panel</a> and click "Generate prediction sets" to create AI-researched predicted papers.</p>
+        </div>
     {% endif %}
 </section>
 {% endblock %}

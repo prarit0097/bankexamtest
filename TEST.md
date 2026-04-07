@@ -632,3 +632,8 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - `ensure_default_taxonomy()` me in-memory cache add kiya gaya taaki har request par unnecessary DB query na ho; test suite me cache reset logic bhi add ki gayi
 - OpenAI API calls me 1-second throttle add kiya gaya taaki rapid-fire requests se rate limit hit na ho
 - Test creation me 5-second cooldown add kiya gaya taaki accidental double-click se duplicate sessions na bane
+- Prediction engine ko completely rewrite kiya gaya: ab har exam ke har section ke liye AI se real exam-style MCQ questions generate hote hain (5 per section)
+- Prediction questions ab placeholder nahi hain; actual banking exam difficulty ke questions hain jaise Quantitative Aptitude me real calculations, Reasoning me puzzles, English me grammar/vocabulary, aur Banking Awareness me factual questions
+- Jab OpenAI API available hai tab AI research-based questions aate hain; jab nahi hai tab smart fallback templates use hote hain jo actual exam patterns follow karte hain
+- Uploaded corpus data (study materials, papers) bhi prediction question generation me context ke roop me use hota hai (RAG-style)
+- Predicted paper detail page me section-wise grouping aur correct answer highlighting improve ki gayi
