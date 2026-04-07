@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import DetailView, FormView, TemplateView
@@ -93,6 +93,13 @@ class AdminPanelView(TemplateView):
     template_name = "prep/admin_panel.html"
     http_method_names = ["get", "post"]
 
+    def render_to_response(self, context, **response_kwargs):
+        response = super().render_to_response(context, **response_kwargs)
+        response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response["Pragma"] = "no-cache"
+        response["Expires"] = "0"
+        return response
+
     def get_context_data(self, **kwargs):
         ensure_default_taxonomy()
         context = super().get_context_data(**kwargs)
@@ -169,14 +176,25 @@ class AdminPanelView(TemplateView):
         }
         upload_category = category_map[action]
         result = reset_upload_category(upload_category)
+        message = (
+            f"Your data of {upload_category.replace('_', ' ')} is successfully reset. "
+            f"Deleted {result['deleted_assets']} asset(s), {result['deleted_questions']} question(s), "
+            f"and {result['deleted_batches']} batch(es)."
+        )
         messages.success(
             self.request,
-            (
-                f"Reset complete for {upload_category.replace('_', ' ')}. "
-                f"Deleted {result['deleted_assets']} asset(s), {result['deleted_questions']} question(s), "
-                f"and {result['deleted_batches']} batch(es)."
-            ),
+            message,
         )
+        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            counts = build_admin_dashboard()["upload_category_counts"]
+            return JsonResponse(
+                {
+                    "ok": True,
+                    "message": message,
+                    "counts": counts,
+                    "redirect_url": f"{reverse('prep:admin-panel')}?refresh={result['reset_batch_id']}",
+                }
+            )
         return redirect("prep:admin-panel")
 
 

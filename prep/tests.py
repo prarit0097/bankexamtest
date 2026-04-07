@@ -110,6 +110,7 @@ class PrepPlatformTests(TestCase):
         self.assertContains(response, reverse("prep:admin-ingestion-logs"))
         self.assertContains(response, "Current files in this section: 0")
         self.assertNotContains(response, "Django admin")
+        self.assertEqual(response.headers.get("Cache-Control"), "no-store, no-cache, must-revalidate, max-age=0")
 
     def test_admin_panel_generate_predictions_action(self):
         response = self.client.post(reverse("prep:admin-panel"), {"action": "generate_predictions"})
@@ -200,6 +201,28 @@ class PrepPlatformTests(TestCase):
         reset_batch = UploadBatch.objects.order_by("-id").first()
         self.assertEqual(reset_batch.category, "test_paper")
         self.assertIn("Data removed", reset_batch.summary["reset_notice"])
+
+    def test_reset_returns_json_counts_for_ajax_requests(self):
+        previous_upload = SimpleUploadedFile(
+            "ibps-po-2023.txt",
+            b"IBPS PO 2023 previous year paper. Quantitative Aptitude and Reasoning Ability practice.",
+            content_type="text/plain",
+        )
+        self.client.post(
+            reverse("prep:admin-panel"),
+            {"upload_action": "upload_previous_year_paper", "title": "Prev Batch", "uploaded_files": [previous_upload]},
+        )
+
+        response = self.client.post(
+            reverse("prep:admin-panel"),
+            {"action": "reset_previous_year_paper"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["previous_year_paper"], 0)
+        self.assertIn("successfully reset", payload["message"])
 
     def test_legacy_paper_assets_are_counted_and_reset(self):
         ContentAsset.objects.create(

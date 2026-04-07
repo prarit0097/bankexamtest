@@ -55,9 +55,9 @@
     <div class="panel">
         <div class="section-title-row">
             <h2>Upload Previous Year Question Papers</h2>
-            <span class="pill">Uploaded: {{ admin_panel.upload_category_counts.previous_year_paper }}</span>
+            <span class="pill" data-count-pill="previous_year_paper">Uploaded: {{ admin_panel.upload_category_counts.previous_year_paper }}</span>
         </div>
-        <p class="muted">Current files in this section: {{ admin_panel.upload_category_counts.previous_year_paper }}</p>
+        <p class="muted" data-count-text="previous_year_paper">Current files in this section: {{ admin_panel.upload_category_counts.previous_year_paper }}</p>
         <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data" data-upload-form>
             {% csrf_token %}
             <input type="hidden" name="upload_action" value="upload_previous_year_paper">
@@ -87,7 +87,7 @@
                 </div>
             </div>
         </form>
-        <form method="post" action="{% url 'prep:admin-panel' %}" style="margin-top: 12px;" data-reset-form data-section-name="previous year question papers">
+        <form method="post" action="{% url 'prep:admin-panel' %}" style="margin-top: 12px;" data-reset-form data-section-name="previous year question papers" data-reset-category="previous_year_paper">
             {% csrf_token %}
             <button type="submit"
                     class="button secondary"
@@ -98,9 +98,9 @@
     <div class="panel">
         <div class="section-title-row">
             <h2>Upload Test Papers</h2>
-            <span class="pill">Uploaded: {{ admin_panel.upload_category_counts.test_paper }}</span>
+            <span class="pill" data-count-pill="test_paper">Uploaded: {{ admin_panel.upload_category_counts.test_paper }}</span>
         </div>
-        <p class="muted">Current files in this section: {{ admin_panel.upload_category_counts.test_paper }}</p>
+        <p class="muted" data-count-text="test_paper">Current files in this section: {{ admin_panel.upload_category_counts.test_paper }}</p>
         <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data" data-upload-form>
             {% csrf_token %}
             <input type="hidden" name="upload_action" value="upload_test_paper">
@@ -130,7 +130,7 @@
                 </div>
             </div>
         </form>
-        <form method="post" action="{% url 'prep:admin-panel' %}" style="margin-top: 12px;" data-reset-form data-section-name="test papers">
+        <form method="post" action="{% url 'prep:admin-panel' %}" style="margin-top: 12px;" data-reset-form data-section-name="test papers" data-reset-category="test_paper">
             {% csrf_token %}
             <button type="submit"
                     class="button secondary"
@@ -141,9 +141,9 @@
     <div class="panel">
         <div class="section-title-row">
             <h2>Upload Study Materials</h2>
-            <span class="pill">Uploaded: {{ admin_panel.upload_category_counts.study_material }}</span>
+            <span class="pill" data-count-pill="study_material">Uploaded: {{ admin_panel.upload_category_counts.study_material }}</span>
         </div>
-        <p class="muted">Current files in this section: {{ admin_panel.upload_category_counts.study_material }}</p>
+        <p class="muted" data-count-text="study_material">Current files in this section: {{ admin_panel.upload_category_counts.study_material }}</p>
         <form method="post" action="{% url 'prep:admin-panel' %}" enctype="multipart/form-data" data-upload-form>
             {% csrf_token %}
             <input type="hidden" name="upload_action" value="upload_study_material">
@@ -173,7 +173,7 @@
                 </div>
             </div>
         </form>
-        <form method="post" action="{% url 'prep:admin-panel' %}" style="margin-top: 12px;" data-reset-form data-section-name="study materials">
+        <form method="post" action="{% url 'prep:admin-panel' %}" style="margin-top: 12px;" data-reset-form data-section-name="study materials" data-reset-category="study_material">
             {% csrf_token %}
             <button type="submit"
                     class="button secondary"
@@ -406,6 +406,7 @@
             form.addEventListener("submit", function (event) {
                 event.preventDefault();
                 const sectionName = form.getAttribute("data-section-name");
+                const sectionCategory = form.getAttribute("data-reset-category");
                 const confirmed = window.confirm(
                     `Do you want to reset ${sectionName}? This will delete all data from this section only.`
                 );
@@ -417,8 +418,20 @@
                 const formData = new FormData(form);
                 request.addEventListener("load", function () {
                     if (request.status >= 200 && request.status < 400) {
-                        window.alert(`Your data of ${sectionName} is successfully reset.`);
-                        window.location.reload();
+                        try {
+                            const payload = JSON.parse(request.responseText);
+                            if (payload.counts && sectionCategory) {
+                                const pill = document.querySelector(`[data-count-pill="${sectionCategory}"]`);
+                                const text = document.querySelector(`[data-count-text="${sectionCategory}"]`);
+                                if (pill) pill.textContent = `Uploaded: ${payload.counts[sectionCategory]}`;
+                                if (text) text.textContent = `Current files in this section: ${payload.counts[sectionCategory]}`;
+                            }
+                            window.alert(payload.message || `Your data of ${sectionName} is successfully reset.`);
+                            window.location.href = payload.redirect_url || (`${window.location.pathname}?refresh=${Date.now()}`);
+                        } catch {
+                            window.alert(`Your data of ${sectionName} is successfully reset.`);
+                            window.location.href = `${window.location.pathname}?refresh=${Date.now()}`;
+                        }
                     } else {
                         window.alert(`Reset failed for ${sectionName}. Please try again.`);
                     }
