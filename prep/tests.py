@@ -258,6 +258,25 @@ class PrepPlatformTests(TestCase):
         self.assertEqual(asset.metadata["inferred_exam_code"], "RBI-ASST")
         self.assertIn("RAG explanations", asset.metadata["recommended_usage"])
 
+    def test_admin_panel_upload_markdown_file_is_supported(self):
+        upload = SimpleUploadedFile(
+            "ibps-po-notes.md",
+            b"# IBPS PO Notes\n\nQuantitative Aptitude, Reading Comprehension, and Banking Awareness revision notes for 2024.",
+            content_type="text/markdown",
+        )
+        response = self.client.post(
+            reverse("prep:admin-panel"),
+            {
+                "upload_action": "upload_study_material",
+                "title": "IBPS PO Markdown Notes",
+                "uploaded_files": [upload],
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        asset = ContentAsset.objects.latest("id")
+        self.assertEqual(asset.metadata["upload_category"], "study_material")
+        self.assertTrue(asset.uploaded_file.name.endswith(".md"))
+
     def test_admin_section_pages_are_accessible(self):
         for route_name in (
             "prep:admin-content-assets",

@@ -581,6 +581,7 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Reset UX improve ki gayi: ab reset ke baad success prompt aata hai aur page force reload hoti hai, taaki latest count user ko turant dikh sake
 - Admin panel response ko no-cache banaya gaya aur reset XHR ab updated counts return karta hai, taaki browser stale `151` count na dikhaye
 - Admin upload JS me form action collision bug fix kiya gaya; ab single upload aur reset dono sahi route par jaate hain aur `[object RadioNodeList]` path error nahi aata
+- Markdown (`.md`) files bhi upload pipeline me first-class supported hain; forms, validation, ingestion aur metadata inference unke saath bhi kaam karte hain
 - Prediction flow ko OpenAI-assisted banaya gaya: prediction set generation ab likely paper title, summary, likely pattern, aur focus areas AI ke through enrich kar sakti hai; fallback logic bhi present hai
 - Predicted Papers page me cards clickable banaye gaye; click karne par full predicted paper detail khulta hai jahan sare predicted questions list hote hain
 - Predicted paper detail ko real-paper style me improve kiya gaya: section grouping, full question list, likely answer highlighting, aur weak placeholder `[AI Practice]` items ko filter karne ki logic add ki gayi

@@ -113,12 +113,12 @@ class AdminAssetUploadForm(forms.Form):
         required=False,
         help_text="Optional. Leave blank to use the uploaded filename as the title.",
     )
-    uploaded_files = MultipleFileField(help_text="Upload one or many PDF, TXT, or similar study documents.")
+    uploaded_files = MultipleFileField(help_text="Upload one or many PDF, TXT, MD, DOC, or DOCX documents.")
 
     def __init__(self, *args, upload_label="Upload file", **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["uploaded_files"].label = upload_label
-        self.fields["uploaded_files"].help_text = "You can upload 1 file or 50+ files together."
+        self.fields["uploaded_files"].help_text = "You can upload 1 file or 50+ files together, including Markdown (.md) files."
 
     def clean_uploaded_files(self):
         uploaded_files = self.cleaned_data["uploaded_files"]
