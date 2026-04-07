@@ -578,6 +578,7 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Reset ke baad `Recent Upload Batches / Bulk arrangement summaries` me audit-style entry aati hai jo batati hai ki us section ka data remove ho gaya
 - Admin ke 3 upload cards me ab current uploaded file count dikhaya जाता hai; zero hone par bhi `0` visible rehta hai
 - Legacy uploaded files ko bhi section counts aur reset logic me include kiya gaya, taki purana data aur naya data dono same admin controls se manage ho sake
+- Reset UX improve ki gayi: ab reset ke baad success prompt aata hai aur page force reload hoti hai, taaki latest count user ko turant dikh sake
 - Admin upload JS me form action collision bug fix kiya gaya; ab single upload aur reset dono sahi route par jaate hain aur `[object RadioNodeList]` path error nahi aata
 - Prediction flow ko OpenAI-assisted banaya gaya: prediction set generation ab likely paper title, summary, likely pattern, aur focus areas AI ke through enrich kar sakti hai; fallback logic bhi present hai
 - Predicted Papers page me cards clickable banaye gaye; click karne par full predicted paper detail khulta hai jahan sare predicted questions list hote hain

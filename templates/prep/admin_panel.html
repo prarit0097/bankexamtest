@@ -87,11 +87,10 @@
                 </div>
             </div>
         </form>
-        <form method="post" action="{% url 'prep:admin-panel' %}" style="margin-top: 12px;">
+        <form method="post" action="{% url 'prep:admin-panel' %}" style="margin-top: 12px;" data-reset-form data-section-name="previous year question papers">
             {% csrf_token %}
             <button type="submit"
                     class="button secondary"
-                    onclick="return confirm('Do you want to reset previous year question papers? This will delete all data from this section only.');"
                     name="action"
                     value="reset_previous_year_paper">Reset</button>
         </form>
@@ -131,11 +130,10 @@
                 </div>
             </div>
         </form>
-        <form method="post" action="{% url 'prep:admin-panel' %}" style="margin-top: 12px;">
+        <form method="post" action="{% url 'prep:admin-panel' %}" style="margin-top: 12px;" data-reset-form data-section-name="test papers">
             {% csrf_token %}
             <button type="submit"
                     class="button secondary"
-                    onclick="return confirm('Do you want to reset test papers? This will delete all data from this section only.');"
                     name="action"
                     value="reset_test_paper">Reset</button>
         </form>
@@ -175,11 +173,10 @@
                 </div>
             </div>
         </form>
-        <form method="post" action="{% url 'prep:admin-panel' %}" style="margin-top: 12px;">
+        <form method="post" action="{% url 'prep:admin-panel' %}" style="margin-top: 12px;" data-reset-form data-section-name="study materials">
             {% csrf_token %}
             <button type="submit"
                     class="button secondary"
-                    onclick="return confirm('Do you want to reset study materials? This will delete all data from this section only.');"
                     name="action"
                     value="reset_study_material">Reset</button>
         </form>
@@ -397,6 +394,38 @@
                     }
                 });
 
+                request.open(form.getAttribute("method") || "post", form.getAttribute("action"));
+                request.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                request.send(formData);
+            });
+        });
+    })();
+    (function () {
+        const resetForms = document.querySelectorAll("[data-reset-form]");
+        resetForms.forEach((form) => {
+            form.addEventListener("submit", function (event) {
+                event.preventDefault();
+                const sectionName = form.getAttribute("data-section-name");
+                const confirmed = window.confirm(
+                    `Do you want to reset ${sectionName}? This will delete all data from this section only.`
+                );
+                if (!confirmed) {
+                    return;
+                }
+
+                const request = new XMLHttpRequest();
+                const formData = new FormData(form);
+                request.addEventListener("load", function () {
+                    if (request.status >= 200 && request.status < 400) {
+                        window.alert(`Your data of ${sectionName} is successfully reset.`);
+                        window.location.reload();
+                    } else {
+                        window.alert(`Reset failed for ${sectionName}. Please try again.`);
+                    }
+                });
+                request.addEventListener("error", function () {
+                    window.alert(`Reset failed for ${sectionName} because the request could not complete.`);
+                });
                 request.open(form.getAttribute("method") || "post", form.getAttribute("action"));
                 request.setRequestHeader("X-Requested-With", "XMLHttpRequest");
                 request.send(formData);
