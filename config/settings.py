@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
 import dj_database_url
 
 
@@ -130,6 +131,8 @@ OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-s
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_API_BASE = os.getenv("TELEGRAM_API_BASE", "https://api.telegram.org")
 DEFAULT_TELEGRAM_CHAT_ID = os.getenv("DEFAULT_TELEGRAM_CHAT_ID", "").strip()
+TELEGRAM_DAILY_REPORT_HOUR = int(os.getenv("TELEGRAM_DAILY_REPORT_HOUR", "10"))
+TELEGRAM_DAILY_REPORT_MINUTE = int(os.getenv("TELEGRAM_DAILY_REPORT_MINUTE", "0"))
 
 DEFAULT_TEST_QUESTION_COUNT = int(os.getenv("DEFAULT_TEST_QUESTION_COUNT", "10"))
 DEFAULT_TEST_DURATION_MINUTES = int(os.getenv("DEFAULT_TEST_DURATION_MINUTES", "15"))
@@ -137,6 +140,16 @@ PREDICTION_LOOKBACK_YEARS = int(os.getenv("PREDICTION_LOOKBACK_YEARS", "5"))
 DATA_UPLOAD_MAX_NUMBER_FILES = int(os.getenv("DATA_UPLOAD_MAX_NUMBER_FILES", "500"))
 DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("DATA_UPLOAD_MAX_MEMORY_SIZE", str(52428800)))
 FILE_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("FILE_UPLOAD_MAX_MEMORY_SIZE", str(10485760)))
+
+CELERY_BEAT_SCHEDULE = {
+    "send-daily-telegram-reports": {
+        "task": "prep.tasks.send_daily_telegram_reports",
+        "schedule": crontab(
+            hour=TELEGRAM_DAILY_REPORT_HOUR,
+            minute=TELEGRAM_DAILY_REPORT_MINUTE,
+        ),
+    }
+}
 
 LOGIN_URL = "prep:login"
 LOGIN_REDIRECT_URL = "prep:home"

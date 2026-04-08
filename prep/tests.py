@@ -1,4 +1,3 @@
-from datetime import timedelta
 import tempfile
 from unittest.mock import Mock, patch
 
@@ -30,6 +29,7 @@ from prep.services.notifications import generate_daily_summary, send_daily_summa
 from prep.services.rag import get_best_explanation
 from prep.services.taxonomy import ensure_default_taxonomy, reset_taxonomy_cache
 from prep.forms import TestCreationForm
+from prep.tasks import send_daily_telegram_reports
 
 
 @override_settings(
@@ -526,13 +526,12 @@ class PrepPlatformTests(TestCase):
         )
         question = session.session_questions.first().question
         submit_test_session(session, {str(question.id): str(question.correct_option.id)})
-        yesterday = timezone.now() - timedelta(days=1)
-        session.submitted_at = yesterday
-        session.save(update_fields=["submitted_at", "updated_at"])
 
         text, payload = generate_daily_summary(telegram_link)
-        self.assertIn("Tests attempted: 1", text)
+        self.assertIn("Test submitted today: Yes", text)
+        self.assertIn("Tests attempted today: 1", text)
         self.assertEqual(payload["tests_attempted"], 1)
+        self.assertTrue(payload["submitted_today"])
 
         delivery_log = send_daily_summary(telegram_link)
         self.assertEqual(delivery_log.status, DeliveryStatus.SKIPPED)
@@ -549,6 +548,19 @@ class PrepPlatformTests(TestCase):
 
         self.assertEqual(delivery_log.status, DeliveryStatus.FAILED)
         self.assertIn("chat not found", delivery_log.error_message.lower())
+
+    def test_daily_telegram_task_uses_today_for_active_links(self):
+        active_link = TelegramLink.objects.create(chat_id="3333", username="active-user")
+        TelegramLink.objects.create(chat_id="4444", username="inactive-user", is_active=False)
+
+        with patch("prep.tasks.send_daily_summary") as mocked_send_daily_summary:
+            sent_count = send_daily_telegram_reports()
+
+        self.assertEqual(sent_count, 1)
+        mocked_send_daily_summary.assert_called_once_with(
+            active_link,
+            report_date=timezone.localdate(),
+        )
 
     def test_student_flow_from_start_to_result(self):
         response = self.client.post(

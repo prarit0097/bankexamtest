@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 import requests
 from django.conf import settings
 from django.utils import timezone
@@ -8,7 +6,7 @@ from prep.models import DeliveryStatus, TelegramDeliveryLog, TestSession, TestSt
 
 
 def generate_daily_summary(telegram_link, report_date=None):
-    report_date = report_date or timezone.localdate() - timedelta(days=1)
+    report_date = report_date or timezone.localdate()
     sessions = TestSession.objects.filter(
         telegram_link=telegram_link,
         status=TestStatus.SUBMITTED,
@@ -26,6 +24,7 @@ def generate_daily_summary(telegram_link, report_date=None):
     accuracy = round((total_score / total_possible) * 100, 2) if total_possible else 0.0
     payload = {
         "report_date": str(report_date),
+        "submitted_today": total_tests > 0,
         "tests_attempted": total_tests,
         "score": total_score,
         "possible_score": total_possible,
@@ -34,16 +33,17 @@ def generate_daily_summary(telegram_link, report_date=None):
     }
     text = (
         f"Daily Banking Prep Summary ({report_date})\n"
-        f"Tests attempted: {total_tests}\n"
-        f"Score: {int(total_score)}/{int(total_possible) if total_possible else 0}\n"
-        f"Accuracy: {accuracy}%\n"
-        f"Weak areas: {', '.join(payload['weak_areas']) if payload['weak_areas'] else 'No major weak area detected'}"
+        f"Test submitted today: {'Yes' if payload['submitted_today'] else 'No'}\n"
+        f"Tests attempted today: {total_tests}\n"
+        f"Score today: {int(total_score)}/{int(total_possible) if total_possible else 0}\n"
+        f"Accuracy today: {accuracy}%\n"
+        f"Weak areas today: {', '.join(payload['weak_areas']) if payload['weak_areas'] else 'No major weak area detected'}"
     )
     return text, payload
 
 
 def send_daily_summary(telegram_link, report_date=None):
-    report_date = report_date or timezone.localdate() - timedelta(days=1)
+    report_date = report_date or timezone.localdate()
     text, payload = generate_daily_summary(telegram_link, report_date=report_date)
     log, _ = TelegramDeliveryLog.objects.get_or_create(
         telegram_link=telegram_link,

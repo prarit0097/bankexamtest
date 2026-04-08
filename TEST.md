@@ -134,7 +134,15 @@ Agar answer galat hai to app reason explain karta hai.
 App batata hai ki kaunsa topic weak hai.
 
 ### 7. Daily Telegram Report
-Agar student ka Telegram linked hai, to last day ka report Telegram par bheja ja sakta hai.
+Agar student ka Telegram linked hai, to daily report Telegram par bheji ja sakti hai.
+Ab report current day ke basis par hoti hai aur daily 10:00 AM (Asia/Kolkata) scheduler ke through jaane ke liye configure ki gayi hai.
+Report me ye bataya ja sakta hai:
+
+- aaj test submit hua ya nahi
+- aaj kitne tests submit hue
+- aaj ka total score kya raha
+- aaj ki accuracy kya rahi
+- aaj ke top weak areas kya rahe
 
 ### 8. Profile Page
 Ab app me ek profile dashboard bhi hai.
@@ -494,6 +502,177 @@ python manage.py check
 celery -A config worker -l info
 ```
 
+### 10. Daily Telegram scheduler (required for 10 AM reports)
+```bash
+celery -A config beat -l info
+```
+
+---
+
+## VPS Runbook (Hostinger Production)
+Ye section production VPS par kaam karne wale kisi bhi new user ke liye hai. Isme app location, service names, aur day-to-day commands diye gaye hain.
+
+### Live App Snapshot
+- Live URL: `https://test.praritsidana.com`
+- VPS IP: `187.127.132.106`
+- App root: `/var/www/apps/bankexamtest/app`
+- Python venv: `/var/www/apps/bankexamtest/app/.venv`
+- Nginx site file: `/etc/nginx/sites-available/test.praritsidana.com`
+- Nginx enabled link: `/etc/nginx/sites-enabled/test.praritsidana.com`
+- Gunicorn service: `bankexamtest-gunicorn`
+- Celery service: `bankexamtest-celery`
+- Redis service: `redis-server`
+- PostgreSQL database: `bankexam_prod`
+- PostgreSQL user: `bankexam_dbuser`
+
+### SSH Aur Basic Verification
+```bash
+ssh root@187.127.132.106
+hostnamectl
+python3 --version
+```
+
+### Service Health Commands
+```bash
+systemctl status bankexamtest-gunicorn --no-pager
+systemctl status bankexamtest-celery --no-pager
+systemctl status nginx --no-pager
+systemctl status redis-server --no-pager
+systemctl status postgresql --no-pager
+```
+
+### Service Restart Commands
+```bash
+systemctl restart bankexamtest-gunicorn
+systemctl restart bankexamtest-celery
+systemctl reload nginx
+```
+
+### Auto-start Check (Reboot Ke Baad)
+```bash
+systemctl is-enabled bankexamtest-gunicorn
+systemctl is-enabled bankexamtest-celery
+systemctl is-enabled nginx
+systemctl is-enabled redis-server
+systemctl is-enabled postgresql
+```
+
+### Logs (Troubleshooting)
+```bash
+journalctl -u bankexamtest-gunicorn -n 120 --no-pager
+journalctl -u bankexamtest-celery -n 120 --no-pager
+journalctl -u nginx -n 120 --no-pager
+```
+
+### Deploy / Update Flow (Git Pull + Migrate)
+```bash
+sudo -u bankexam -H bash -lc '
+cd /var/www/apps/bankexamtest/app
+git pull
+source .venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py collectstatic --noinput
+python manage.py check
+'
+systemctl restart bankexamtest-gunicorn
+systemctl restart bankexamtest-celery
+```
+
+### Current Login Credentials (Seeded)
+- Username: `chahat@gmail.com`
+- Password: `Chahat@123`
+
+### Production `.env` Quick Sanity
+```bash
+sudo -u bankexam -H bash -lc '
+cd /var/www/apps/bankexamtest/app
+grep -E "^DJANGO_DEBUG=|^DJANGO_ALLOWED_HOSTS=|^DJANGO_CSRF_TRUSTED_ORIGINS=|^DATABASE_URL=|^CELERY_TASK_ALWAYS_EAGER=" .env
+'
+```
+
+Expected production values:
+- `DJANGO_DEBUG=0`
+- `DJANGO_ALLOWED_HOSTS=test.praritsidana.com,127.0.0.1,localhost`
+- `DJANGO_CSRF_TRUSTED_ORIGINS=https://test.praritsidana.com`
+- `DATABASE_URL=postgres://...@127.0.0.1:5432/bankexam_prod`
+- `CELERY_TASK_ALWAYS_EAGER=0`
+
+### Postgres Verification Commands
+```bash
+PGPASSWORD='<DB_PASSWORD>' psql -h 127.0.0.1 -U bankexam_dbuser -d bankexam_prod -c '\conninfo'
+sudo -u bankexam -H bash -lc '
+cd /var/www/apps/bankexamtest/app
+source .venv/bin/activate
+python manage.py shell -c "from django.db import connection; print(connection.settings_dict[\"ENGINE\"], connection.settings_dict[\"NAME\"])"
+'
+```
+
+### DNS Verification Commands
+Domain ke nameservers `domaincontrol.com` par hain, isliye DNS records wahi manage karne hain.
+```bash
+dig +short NS praritsidana.com
+dig +short A test.praritsidana.com @ns09.domaincontrol.com
+dig +short A test.praritsidana.com @ns10.domaincontrol.com
+dig +short A test.praritsidana.com @1.1.1.1
+dig +short A test.praritsidana.com @8.8.8.8
+```
+
+### SSL (Let's Encrypt / Certbot)
+```bash
+certbot --nginx -d test.praritsidana.com --redirect -m your-email@example.com --agree-tos --no-eff-email
+certbot renew --dry-run
+systemctl list-timers | grep certbot
+```
+
+### App Reachability Checks
+```bash
+curl -I https://test.praritsidana.com
+curl -I https://test.praritsidana.com/login/
+curl -I -H "Host: test.praritsidana.com" http://127.0.0.1
+```
+
+### SQLite Backup Command (Before Risky Changes)
+```bash
+cp /var/www/apps/bankexamtest/app/db.sqlite3 /var/www/apps/bankexamtest/app/db.sqlite3.backup.$(date +%F_%H%M%S)
+```
+
+### PostgreSQL Migration Commands (Reference)
+```bash
+sudo -u postgres psql <<'SQL'
+CREATE ROLE bankexam_dbuser WITH LOGIN PASSWORD 'StrongPass_2026';
+CREATE DATABASE bankexam_prod OWNER bankexam_dbuser;
+ALTER ROLE bankexam_dbuser SET client_encoding TO 'utf8';
+ALTER ROLE bankexam_dbuser SET default_transaction_isolation TO 'read committed';
+ALTER ROLE bankexam_dbuser SET timezone TO 'UTC';
+SQL
+
+sudo -u bankexam -H bash -lc '
+cd /var/www/apps/bankexamtest/app
+source .venv/bin/activate
+python manage.py dumpdata prep sessions --indent 2 > /tmp/bankexam_data.json
+python manage.py migrate
+python manage.py loaddata /tmp/bankexam_data.json
+'
+```
+
+### Rollback to SQLite (Emergency)
+```bash
+sudo -u bankexam -H bash -lc '
+cd /var/www/apps/bankexamtest/app
+sed -i "s|^DATABASE_URL=.*|DATABASE_URL=sqlite:///db.sqlite3|" .env
+'
+systemctl restart bankexamtest-gunicorn
+systemctl restart bankexamtest-celery
+```
+
+### Security Must-Do
+- Real API keys/tokens kabhi docs ya chat me paste na karein.
+- Agar secrets expose ho jayein, immediately rotate karein:
+  - `DJANGO_SECRET_KEY`
+  - `OPENAI_API_KEY`
+  - `TELEGRAM_BOT_TOKEN`
+
 ---
 
 ## Environment Variables Kya Hote Hain
@@ -512,6 +691,8 @@ Main values:
 - `OPENAI_EMBEDDING_MODEL` = embeddings model
 - `TELEGRAM_BOT_TOKEN` = Telegram bot access
 - `DEFAULT_TELEGRAM_CHAT_ID` = backend se fixed Telegram chat routing
+- `TELEGRAM_DAILY_REPORT_HOUR` = Telegram daily report ka hour (default `10`)
+- `TELEGRAM_DAILY_REPORT_MINUTE` = Telegram daily report ka minute (default `0`)
 - `DATA_UPLOAD_MAX_NUMBER_FILES` = ek request me kitni files upload ho sakti hain
 - `DATA_UPLOAD_MAX_MEMORY_SIZE` = poori upload request ka max size bytes me
 - `FILE_UPLOAD_MAX_MEMORY_SIZE` = ek file ko memory me rakhne ki limit bytes me
@@ -637,3 +818,12 @@ Ye project ek smart banking-exam test platform hai jo student ko test, score, ex
 - Jab OpenAI API available hai tab AI research-based questions aate hain; jab nahi hai tab smart fallback templates use hote hain jo actual exam patterns follow karte hain
 - Uploaded corpus data (study materials, papers) bhi prediction question generation me context ke roop me use hota hai (RAG-style)
 - Predicted paper detail page me section-wise grouping aur correct answer highlighting improve ki gayi
+- Hostinger production ke liye detailed VPS Runbook add kiya gaya (paths, services, deploy/update commands, DNS, SSL, PostgreSQL, backup/rollback aur troubleshooting commands)
+
+### 2026-04-08
+- Telegram daily summary ko previous-day report se change karke same-day activity report banaya gaya
+- Report message me explicit `Yes/No` status add ki gayi ki aaj user ne test submit kiya ya nahi
+- Telegram summary me aaj ke submitted tests count, total score, accuracy, aur weak areas include kiye gaye
+- Celery Beat schedule add kiya gaya jo default configuration me daily `10:00 AM` (Asia/Kolkata) par Telegram reports queue karta hai
+- `TELEGRAM_DAILY_REPORT_HOUR` aur `TELEGRAM_DAILY_REPORT_MINUTE` env settings add ki gayi taaki daily report time configurable rahe
+- Local/dev ya production me automatic Telegram reports ke liye Celery worker ke saath Celery Beat process bhi run karna zaroori hai

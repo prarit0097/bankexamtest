@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from celery import shared_task
 from django.utils import timezone
 
@@ -16,7 +14,7 @@ def ingest_content_asset(asset_id):
 
 @shared_task
 def send_daily_telegram_reports():
-    report_date = timezone.localdate() - timedelta(days=1)
+    report_date = timezone.localdate()
     sent_count = 0
     for telegram_link in TelegramLink.objects.filter(is_active=True):
         send_daily_summary(telegram_link, report_date=report_date)
